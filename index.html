@@ -4,12 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>마운자로 트래커</title>
-<style><!DOCTYPE html>
-<html lang="ko">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>마운자로 트래커</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -444,6 +438,9 @@
         <p>주사 기록을 추가하면 잔류 농도가 표시됩니다</p>
       </div>
     </div>
+
+    <!-- Home Chart Card -->
+    <div class="card" id="home-chart-card" style="display:none;padding:14px"></div>
 
     <div class="card">
       <div class="card-title">체중 변화</div>
@@ -950,22 +947,119 @@ function ccReset() {
   const now = Date.now();
   CC.v0 = allMs.length ? Math.min(...allMs) - 5 * 864e5 : now - 14 * 864e5;
   CC.v1 = allMs.length ? Math.max(now, Math.max(...allMs)) + 10 * 864e5 : now + 14 * 864e5;
-  ccDraw();
+  ccDraw(CC);
 }
 
-function ccZoom(factor, pivotX) {
-  const plotW = CC.W - CC.pL - CC.pR;
-  const ratio  = pivotX !== undefined ? Math.max(0, Math.min(1, (pivotX - CC.pL) / plotW)) : 0.5;
-  const range  = CC.v1 - CC.v0;
+// ─── Home tab chart instance ──────────────────────────
+const CC_HOME = {
+  el: null, ctx: null, dpr: 1, W: 0, H: 0,
+  pL: 46, pR: 46, pT: 26, pB: 38,
+  v0: 0, v1: 0,
+  dragging: false, dragClientX: 0, dragV0: 0, dragRange: 0,
+  pinchDist0: 0, pinchV0: 0, pinchV1: 0,
+};
+let _chwBound = false;
+
+function ccHomeInit() {
+  CC_HOME.el = document.getElementById('combo-chart-home');
+  if (!CC_HOME.el) return;
+  CC_HOME.ctx = CC_HOME.el.getContext('2d');
+  CC_HOME.dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+  const container = CC_HOME.el.parentElement;
+  const cssW = Math.max(220, container.clientWidth || 340);
+  const cssH = Math.round(Math.min(240, Math.max(180, cssW * 0.52)));
+  CC_HOME.el.style.width  = cssW + 'px';
+  CC_HOME.el.style.height = cssH + 'px';
+  CC_HOME.el.width  = Math.round(cssW * CC_HOME.dpr);
+  CC_HOME.el.height = Math.round(cssH * CC_HOME.dpr);
+  CC_HOME.W = cssW; CC_HOME.H = cssH;
+  CC_HOME.el.style.cursor = 'grab';
+
+  // Canvas events re-bound each time (canvas recreated by renderDrugLevel)
+  CC_HOME.el.addEventListener('mousedown', _chmDown);
+  CC_HOME.el.addEventListener('wheel', _chmWheel, { passive: false });
+  CC_HOME.el.addEventListener('touchstart', _chmTouchStart, { passive: false });
+  CC_HOME.el.addEventListener('touchmove',  _chmTouchMove,  { passive: false });
+  CC_HOME.el.addEventListener('touchend',   _chmTouchEnd);
+
+  if (!_chwBound) {
+    _chwBound = true;
+    window.addEventListener('mousemove', _chmMove);
+    window.addEventListener('mouseup',   _chmUp);
+  }
+
+  // Only reset view on first open; preserve pan/zoom thereafter
+  if (CC_HOME.v0 === 0 && CC_HOME.v1 === 0) {
+    const allMs = [
+      ...injections.map(i => new Date(i.date + 'T12:00:00').getTime()),
+      ...weights.map(w => new Date(w.date + 'T12:00:00').getTime()),
+    ];
+    const now = Date.now();
+    CC_HOME.v0 = allMs.length ? Math.min(...allMs) - 4 * 864e5 : now - 14 * 864e5;
+    CC_HOME.v1 = allMs.length ? Math.max(now, Math.max(...allMs)) + 8 * 864e5 : now + 14 * 864e5;
+  }
+  ccDraw(CC_HOME);
+}
+function _chmDown(e) {
+  CC_HOME.dragging = true; CC_HOME.dragClientX = e.clientX;
+  CC_HOME.dragV0 = CC_HOME.v0; CC_HOME.dragRange = CC_HOME.v1 - CC_HOME.v0;
+  CC_HOME.el.style.cursor = 'grabbing';
+}
+function _chmMove(e) {
+  if (!CC_HOME.dragging || !CC_HOME.el) return;
+  const plotW = CC_HOME.W - CC_HOME.pL - CC_HOME.pR;
+  CC_HOME.v0 = CC_HOME.dragV0 - (e.clientX - CC_HOME.dragClientX) / plotW * CC_HOME.dragRange;
+  CC_HOME.v1 = CC_HOME.v0 + CC_HOME.dragRange;
+  ccDraw(CC_HOME);
+}
+function _chmUp() { CC_HOME.dragging = false; if (CC_HOME.el) CC_HOME.el.style.cursor = 'grab'; }
+function _chmWheel(e) {
+  e.preventDefault();
+  ccZoomInst(e.deltaY > 0 ? 1.13 : 0.88, e.clientX - CC_HOME.el.getBoundingClientRect().left, CC_HOME);
+}
+function _chmTouchStart(e) {
+  e.preventDefault();
+  if (e.touches.length === 1) {
+    CC_HOME.dragging = true; CC_HOME.dragClientX = e.touches[0].clientX;
+    CC_HOME.dragV0 = CC_HOME.v0; CC_HOME.dragRange = CC_HOME.v1 - CC_HOME.v0;
+  } else if (e.touches.length === 2) {
+    CC_HOME.dragging = false;
+    CC_HOME.pinchDist0 = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+    CC_HOME.pinchV0 = CC_HOME.v0; CC_HOME.pinchV1 = CC_HOME.v1;
+  }
+}
+function _chmTouchMove(e) {
+  e.preventDefault();
+  if (e.touches.length === 1 && CC_HOME.dragging) {
+    const plotW = CC_HOME.W - CC_HOME.pL - CC_HOME.pR;
+    CC_HOME.v0 = CC_HOME.dragV0 - (e.touches[0].clientX - CC_HOME.dragClientX) / plotW * CC_HOME.dragRange;
+    CC_HOME.v1 = CC_HOME.v0 + CC_HOME.dragRange; ccDraw(CC_HOME);
+  } else if (e.touches.length === 2 && CC_HOME.pinchDist0 > 0) {
+    const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+    const newRange = Math.max(3 * 864e5, Math.min(5 * 365 * 864e5, (CC_HOME.pinchV1 - CC_HOME.pinchV0) * CC_HOME.pinchDist0 / dist));
+    const mid = (CC_HOME.pinchV0 + CC_HOME.pinchV1) / 2;
+    CC_HOME.v0 = mid - newRange / 2; CC_HOME.v1 = mid + newRange / 2; ccDraw(CC_HOME);
+  }
+}
+function _chmTouchEnd() { CC_HOME.dragging = false; CC_HOME.pinchDist0 = 0; }
+
+// Generic zoom — works with any chart instance
+function ccZoomInst(factor, pivotX, inst) {
+  const plotW = inst.W - inst.pL - inst.pR;
+  const ratio  = pivotX !== undefined ? Math.max(0, Math.min(1, (pivotX - inst.pL) / plotW)) : 0.5;
+  const range  = inst.v1 - inst.v0;
   const newRange = Math.max(3 * 864e5, Math.min(5 * 365 * 864e5, range * factor));
-  const pivot  = CC.v0 + range * ratio;
-  CC.v0 = pivot - newRange * ratio;
-  CC.v1 = pivot + newRange * (1 - ratio);
-  ccDraw();
+  const pivot  = inst.v0 + range * ratio;
+  inst.v0 = pivot - newRange * ratio;
+  inst.v1 = pivot + newRange * (1 - ratio);
+  ccDraw(inst);
 }
+function ccZoom(factor, pivotX) { ccZoomInst(factor, pivotX, CC); }
 
-function ccDraw() {
-  const { el, ctx, dpr, W, H, pL, pR, pT, pB, v0, v1 } = CC;
+function ccDraw(inst) {
+  inst = inst || CC;
+  const { el, ctx, dpr, W, H, pL, pR, pT, pB, v0, v1 } = inst;
   if (!el || !ctx || W === 0) return;
 
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -1213,6 +1307,8 @@ function renderDrugLevel() {
         <div class="empty-icon">🧪</div>
         <p>주사 기록을 추가하면 잔류 농도가 표시됩니다</p>
       </div>`;
+    const chartCard = document.getElementById('home-chart-card');
+    if (chartCard) chartCard.style.display = 'none';
     return;
   }
 
@@ -1241,32 +1337,6 @@ function renderDrugLevel() {
   else if (pct >= 0.30) { color = '#f59e0b'; label = '감소 중'; }
   else                  { color = '#ef4444'; label = '저농도'; }
 
-  // Arc gauge: semicircle, center (100,110), radius 72
-  const cx = 100, cy = 110, R = 72;
-  const arcLen = Math.PI * R; // ≈ 226.2
-  const filledLen = (arcLen * pct).toFixed(1);
-
-  // Mini projection chart: 7 days from last injection
-  const miniW = 290, miniH = 68;
-  const pL = 6, pR = 6, pT = 12, pB = 18;
-  const pts = [];
-  for (let d = 0; d <= 7; d += 0.2) {
-    pts.push({ d, v: calcDrugLevelAt(lastMs + d * 86400000) });
-  }
-  pts.push({ d: 7, v: troughLevel });
-
-  const maxV = Math.max(...pts.map(p => p.v), 0.01);
-  const px2 = d => pL + (miniW - pL - pR) * (d / 7);
-  const py2 = v => pT + (miniH - pT - pB) * (1 - v / maxV);
-
-  const polyPts  = pts.map(p => `${px2(p.d).toFixed(1)},${py2(p.v).toFixed(1)}`).join(' ');
-  const areaPts  = `${px2(0).toFixed(1)},${miniH - pB} ` + polyPts + ` ${px2(7).toFixed(1)},${miniH - pB}`;
-
-  const nowDay    = Math.min(Math.max(daysSinceLast, 0), 7);
-  const nowX      = px2(nowDay).toFixed(1);
-  const nowY      = py2(currentLevel).toFixed(1);
-  const nowAnchor = nowDay < 1 ? 'start' : nowDay > 6 ? 'end' : 'middle';
-
   const daysToNextStr = daysToNext < 0
     ? `<span style="color:var(--danger)">지남</span>`
     : `${daysToNext.toFixed(1)}<span class="level-meta-unit">일</span>`;
@@ -1277,28 +1347,18 @@ function renderDrugLevel() {
       <span style="font-size:11px;color:var(--gray-500)">반감기 ${HALF_LIFE}일 기준</span>
     </div>
 
-    <div class="gauge-wrap">
-      <svg width="200" height="136" viewBox="0 0 200 136">
-        <!-- Background track -->
-        <path d="M ${cx-R},${cy} A ${R},${R} 0 0,0 ${cx+R},${cy}"
-          fill="none" stroke="#e5e7eb" stroke-width="13" stroke-linecap="round"/>
-        <!-- Filled track -->
-        <path d="M ${cx-R},${cy} A ${R},${R} 0 0,0 ${cx+R},${cy}"
-          fill="none" stroke="${color}" stroke-width="13" stroke-linecap="round"
-          stroke-dasharray="${filledLen} ${arcLen.toFixed(1)}" stroke-dashoffset="0"/>
-        <!-- Value -->
-        <text x="${cx}" y="${cy-26}" text-anchor="middle" font-size="30"
-          font-weight="700" fill="#111827">${currentLevel.toFixed(2)}</text>
-        <text x="${cx}" y="${cy-8}" text-anchor="middle" font-size="13"
-          fill="#6b7280">mg 잔류 추정</text>
-        <!-- Badge -->
-        <rect x="${cx-34}" y="${cy+2}" width="68" height="20" rx="10" fill="${color}22"/>
-        <text x="${cx}" y="${cy+15}" text-anchor="middle" font-size="11"
-          font-weight="600" fill="${color}">${(pct * 100).toFixed(0)}% · ${label}</text>
-        <!-- Scale labels -->
-        <text x="${cx-R}" y="${cy+15}" text-anchor="start" font-size="9" fill="#9ca3af">0</text>
-        <text x="${cx+R}" y="${cy+15}" text-anchor="end" font-size="9" fill="#9ca3af">${ssPeak.toFixed(1)}mg</text>
-      </svg>
+    <div style="text-align:center;margin:12px 0 16px">
+      <div style="font-size:36px;font-weight:700;color:#111827;line-height:1">${currentLevel.toFixed(2)}</div>
+      <div style="font-size:13px;color:#6b7280;margin-top:4px">mg 잔류 추정</div>
+      <div style="display:inline-block;margin-top:8px;padding:4px 14px;border-radius:20px;background:${color}22;font-size:13px;font-weight:600;color:${color}">${(pct * 100).toFixed(0)}% · ${label}</div>
+    </div>
+    <div style="margin:0 4px 4px">
+      <div style="height:14px;border-radius:7px;background:#e5e7eb;overflow:hidden">
+        <div style="height:100%;width:${(pct * 100).toFixed(1)}%;background:${color};border-radius:7px;transition:width 0.4s"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:11px;color:#9ca3af">
+        <span>0</span><span>${ssPeak.toFixed(1)}mg</span>
+      </div>
     </div>
 
     <div class="level-meta-grid">
@@ -1316,37 +1376,27 @@ function renderDrugLevel() {
       </div>
     </div>
 
-    <div style="font-size:11px;color:var(--gray-500);margin-bottom:5px">이번 주 농도 예측 곡선</div>
-    <div style="overflow-x:auto">
-      <svg width="${miniW}" height="${miniH}" viewBox="0 0 ${miniW} ${miniH}" style="display:block">
-        <!-- Mid gridline -->
-        <line x1="${pL}" y1="${(pT + (miniH-pT-pB)*0.5).toFixed(1)}"
-              x2="${miniW-pR}" y2="${(pT + (miniH-pT-pB)*0.5).toFixed(1)}"
-              stroke="#f3f4f6" stroke-width="1"/>
-        <!-- Area -->
-        <polyline points="${areaPts}" fill="${color}15" stroke="none"/>
-        <!-- Line -->
-        <polyline points="${polyPts}" fill="none" stroke="${color}"
-          stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-        <!-- Now line -->
-        <line x1="${nowX}" y1="${pT}" x2="${nowX}" y2="${miniH-pB}"
-          stroke="#9ca3af" stroke-width="1" stroke-dasharray="3,2"/>
-        <!-- Now dot -->
-        <circle cx="${nowX}" cy="${nowY}" r="4.5"
-          fill="white" stroke="${color}" stroke-width="2.5"/>
-        <!-- "지금" label -->
-        <text x="${nowX}" y="${pT-1}" text-anchor="${nowAnchor}"
-          font-size="9" fill="#6b7280" font-weight="600">지금</text>
-        <!-- X labels -->
-        <text x="${px2(0).toFixed(1)}" y="${miniH}" text-anchor="start"   font-size="9" fill="#9ca3af">주사일</text>
-        <text x="${px2(3.5).toFixed(1)}" y="${miniH}" text-anchor="middle" font-size="9" fill="#9ca3af">3.5일</text>
-        <text x="${px2(7).toFixed(1)}" y="${miniH}" text-anchor="end"     font-size="9" fill="#9ca3af">7일후</text>
-      </svg>
-    </div>
-
-    <div class="pk-note">
+    <div class="pk-note" style="margin-top:10px">
       ⚠️ 반감기(5일) 기반 단순 추정값으로, 개인별 흡수·분포 차이로 실제 농도와 다를 수 있습니다. 의학적 판단에 사용하지 마세요.
     </div>`;
+
+  // Populate home chart card separately to avoid SVG overflow overlap
+  const chartCard = document.getElementById('home-chart-card');
+  if (chartCard) {
+    chartCard.style.display = '';
+    chartCard.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:11px;color:var(--gray-500)">농도 · 체중 통합 그래프</span>
+        <span style="font-size:10px;color:var(--gray-400)">드래그·스크롤로 탐색</span>
+      </div>
+      <canvas id="combo-chart-home" class="chart-canvas"></canvas>
+      <div class="chart-legend" style="margin-top:8px">
+        <div class="legend-item"><div style="width:16px;height:2px;background:#6366f1;border-radius:1px"></div>잔류 농도</div>
+        <div class="legend-item"><div style="width:9px;height:9px;border-radius:50%;background:#10b981;flex-shrink:0"></div>체중</div>
+        <div class="legend-item"><div style="width:2px;height:12px;background:rgba(239,68,68,0.5)"></div>오늘</div>
+      </div>`;
+    setTimeout(ccHomeInit, 30);
+  }
 }
 
 // ─── Render functions ─────────────────────────────────
@@ -1380,1584 +1430,6 @@ function renderHome() {
     const diff = Math.round((nextD - today) / 86400000);
 
     document.getElementById('next-date').textContent = fmtFull(localDateStr(nextD));
-    document.getElementById('next-dose-info').textContent = `현재 용량: ${last.dose}mg`;
-
-    let badge, bannerClass = 'next-dose-banner';
-    if (diff < 0) badge = `${Math.abs(diff)}일 지남 ⚠️`;
-    else if (diff === 0) badge = '오늘 주사일! 🔔';
-    else if (diff === 1) badge = '내일 주사일';
-    else badge = `${diff}일 후`;
-    document.getElementById('days-left').textContent = badge;
-  }
-
-  // Stats
-  document.getElementById('stat-weeks').textContent = injections.length;
-  document.getElementById('stat-current-dose').textContent = last ? last.dose + 'mg' : '-';
-
-  if (weights.length >= 2) {
-    const loss = (weights[0].value - weights[weights.length - 1].value).toFixed(1);
-    const el = document.getElementById('stat-weight-loss');
-    if (parseFloat(loss) > 0) { el.textContent = '-' + loss; el.style.color = 'var(--success)'; }
-    else if (parseFloat(loss) < 0) { el.textContent = '+' + Math.abs(loss); el.style.color = 'var(--danger)'; }
-    else { el.textContent = '0'; }
-  }
-
-  // Weight summary
-  const ws = document.getElementById('weight-summary');
-  if (weights.length > 0) {
-    const first = weights[0], latest = weights[weights.length - 1];
-    const diff = (latest.value - first.value).toFixed(1);
-    const cls = parseFloat(diff) < 0 ? 'loss' : parseFloat(diff) > 0 ? 'gain' : 'same';
-    const arrow = parseFloat(diff) < 0 ? '▼' : parseFloat(diff) > 0 ? '▲' : '━';
-    ws.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div>
-          <div style="font-size:13px;color:var(--gray-500)">시작 체중</div>
-          <div style="font-size:18px;font-weight:700">${first.value} kg</div>
-        </div>
-        <div style="font-size:22px;color:var(--gray-300)">→</div>
-        <div style="text-align:right">
-          <div style="font-size:13px;color:var(--gray-500)">현재 체중</div>
-          <div style="font-size:18px;font-weight:700">${latest.value} kg</div>
-        </div>
-      </div>
-      <div class="divider"></div>
-      <div class="weight-change">
-        <span class="change-chip ${cls}">${arrow} ${Math.abs(diff)} kg</span>
-        <span style="font-size:12px;color:var(--gray-500)">${first.date} ~ ${latest.date}</span>
-      </div>`;
-  } else {
-    ws.innerHTML = `<div class="empty-state" style="padding:20px"><div class="empty-icon">⚖️</div><p>체중 기록이 없습니다</p></div>`;
-  }
-
-  // Recent injections
-  const ri = document.getElementById('recent-injections');
-  if (injections.length === 0) {
-    ri.innerHTML = `<div class="empty-state" style="padding:20px"><div class="empty-icon">💉</div><p>주사 기록이 없습니다</p></div>`;
-  } else {
-    ri.innerHTML = [...injections].reverse().slice(0, 3).map(i => `
-      <div class="log-item">
-        <div>
-          <div class="log-date">${fmt(i.date)}</div>
-          <div class="log-main">${i.dose}mg <span class="dose-badge">${i.dose}mg</span></div>
-          <div class="log-sub">${i.site}${i.memo ? ' · ' + i.memo : ''}</div>
-        </div>
-      </div>`).join('');
-  }
-}
-
-function renderWeightChart() {
-  const wrap = document.getElementById('weight-chart-wrap');
-  if (weights.length < 2) {
-    wrap.innerHTML = `<div class="empty-state"><div class="empty-icon">📊</div><p>체중 기록이 2개 이상이면 그래프가 표시됩니다</p></div>`;
-    return;
-  }
-  const W = Math.max(300, weights.length * 50);
-  const H = 160;
-  const pad = { top: 20, right: 20, bottom: 30, left: 44 };
-  const vals = weights.map(w => w.value);
-  const minV = Math.min(...vals) - 1;
-  const maxV = Math.max(...vals) + 1;
-  const scaleY = v => pad.top + (H - pad.top - pad.bottom) * (1 - (v - minV) / (maxV - minV));
-  const n = weights.length;
-  const scaleX = i => pad.left + (W - pad.left - pad.right) * (i / (n - 1));
-
-  let points = weights.map((w, i) => `${scaleX(i)},${scaleY(w.value)}`).join(' ');
-  let area = `${scaleX(0)},${H - pad.bottom} ` + points + ` ${scaleX(n-1)},${H - pad.bottom}`;
-
-  // Y axis labels
-  const steps = 4;
-  let yLabels = '';
-  for (let s = 0; s <= steps; s++) {
-    const v = minV + (maxV - minV) * s / steps;
-    const y = scaleY(v);
-    yLabels += `<line x1="${pad.left}" y1="${y}" x2="${W - pad.right}" y2="${y}" stroke="#e5e7eb" stroke-width="1"/>`;
-    yLabels += `<text x="${pad.left - 4}" y="${y + 4}" text-anchor="end" font-size="10" fill="#6b7280">${v.toFixed(1)}</text>`;
-  }
-
-  // X axis dates (show only some)
-  let xLabels = '';
-  weights.forEach((w, i) => {
-    if (n <= 7 || i % Math.ceil(n / 5) === 0 || i === n - 1) {
-      const x = scaleX(i);
-      const d = new Date(w.date + 'T00:00:00');
-      xLabels += `<text x="${x}" y="${H - pad.bottom + 14}" text-anchor="middle" font-size="9" fill="#6b7280">${d.getMonth()+1}/${d.getDate()}</text>`;
-    }
-  });
-
-  // Dots
-  let dots = weights.map((w, i) => {
-    const x = scaleX(i), y = scaleY(w.value);
-    return `<circle cx="${x}" cy="${y}" r="4" fill="white" stroke="#4f46e5" stroke-width="2"/>`;
-  }).join('');
-
-  wrap.innerHTML = `
-    <svg class="chart" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
-      ${yLabels}
-      <polyline points="${area}" fill="rgba(79,70,229,0.08)" stroke="none"/>
-      <polyline points="${points}" fill="none" stroke="#4f46e5" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
-      ${dots}
-      ${xLabels}
-    </svg>`;
-}
-
-function renderWeightList() {
-  const el = document.getElementById('weight-list');
-  if (weights.length === 0) {
-    el.innerHTML = `<div class="empty-state"><div class="empty-icon">⚖️</div><p>기록이 없습니다</p></div>`;
-    return;
-  }
-  el.innerHTML = [...weights].reverse().map((w, idx, arr) => {
-    const prev = arr[idx + 1];
-    let changeHtml = '';
-    if (prev) {
-      const diff = (w.value - prev.value).toFixed(1);
-      const cls = parseFloat(diff) < 0 ? 'loss' : parseFloat(diff) > 0 ? 'gain' : 'same';
-      const arrow = parseFloat(diff) < 0 ? '▼' : parseFloat(diff) > 0 ? '▲' : '━';
-      changeHtml = `<span class="change-chip ${cls}" style="font-size:11px;padding:2px 7px">${arrow} ${Math.abs(diff)}</span>`;
-    }
-    return `<div class="log-item">
-      <div>
-        <div class="log-date">${fmt(w.date)}</div>
-        <div class="log-main">${w.value} kg ${changeHtml}</div>
-        ${w.memo ? `<div class="log-sub">${w.memo}</div>` : ''}
-      </div>
-      <button class="btn btn-danger btn-sm" onclick="deleteWeight(${w.id})">삭제</button>
-    </div>`;
-  }).join('');
-}
-
-function renderSEList() {
-  const el = document.getElementById('se-list');
-  const sevLabel = { 1: '가벼움', 2: '중간', 3: '심함' };
-  const sevColor = { 1: 'var(--success)', 2: 'var(--warning)', 3: 'var(--danger)' };
-  if (sideEffects.length === 0) {
-    el.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><p>기록이 없습니다</p></div>`;
-    return;
-  }
-  el.innerHTML = [...sideEffects].reverse().map(se => `
-    <div class="log-item">
-      <div>
-        <div class="log-date">${fmt(se.date)}</div>
-        <div class="log-main" style="color:${sevColor[se.severity]}">${sevLabel[se.severity]}</div>
-        <div class="chips-row" style="margin-top:5px">
-          ${se.symptoms.map(s => `<span class="info-chip">${s}</span>`).join('')}
-        </div>
-        ${se.memo ? `<div class="log-sub" style="margin-top:4px">${se.memo}</div>` : ''}
-      </div>
-      <button class="btn btn-danger btn-sm" onclick="deleteSE(${se.id})">삭제</button>
-    </div>`).join('');
-}
-
-function renderInjList() {
-  const el = document.getElementById('inj-list');
-  if (injections.length === 0) {
-    el.innerHTML = `<div class="empty-state"><div class="empty-icon">💉</div><p>기록이 없습니다</p></div>`;
-    return;
-  }
-  el.innerHTML = [...injections].reverse().map(i => `
-    <div class="log-item">
-      <div>
-        <div class="log-date">${fmt(i.date)}</div>
-        <div class="log-main">${i.site} <span class="dose-badge">${i.dose}mg</span></div>
-        ${i.memo ? `<div class="log-sub">${i.memo}</div>` : ''}
-      </div>
-      <button class="btn btn-danger btn-sm" onclick="deleteInjection(${i.id})">삭제</button>
-    </div>`).join('');
-}
-
-// ─── Export / Reset ───────────────────────────────────
-function exportData() {
-  const data = { injections, weights, sideEffects, exportedAt: new Date().toISOString() };
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `maunjaro-${todayStr()}.json`;
-  a.click();
-}
-
-function resetData() {
-  if (!confirm('모든 기록을 삭제하겠습니까?\n이 작업은 되돌릴 수 없습니다.')) return;
-  injections = []; weights = []; sideEffects = [];
-  ['mj_injections', 'mj_weights', 'mj_se'].forEach(k => localStorage.removeItem(k));
-  showToast('모든 데이터가 초기화되었습니다');
-  renderAll();
-}
-
-// ─── Toast ────────────────────────────────────────────
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
-}
-
-// ─── Init ─────────────────────────────────────────────
-initDates();
-renderAll();
-</script>
-</body>
-</html>
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  :root {
-    --primary: #4f46e5;
-    --primary-light: #e0e7ff;
-    --success: #10b981;
-    --success-light: #d1fae5;
-    --warning: #f59e0b;
-    --warning-light: #fef3c7;
-    --danger: #ef4444;
-    --danger-light: #fee2e2;
-    --gray-50: #f9fafb;
-    --gray-100: #f3f4f6;
-    --gray-200: #e5e7eb;
-    --gray-300: #d1d5db;
-    --gray-500: #6b7280;
-    --gray-700: #374151;
-    --gray-900: #111827;
-    --radius: 12px;
-    --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
-    --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
-  }
-
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: var(--gray-50);
-    color: var(--gray-900);
-    min-height: 100vh;
-  }
-
-  /* Header */
-  .header {
-    background: white;
-    border-bottom: 1px solid var(--gray-200);
-    padding: 16px 20px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .header-icon {
-    width: 36px; height: 36px;
-    background: var(--primary);
-    border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 18px;
-  }
-  .header h1 { font-size: 18px; font-weight: 700; }
-  .header p { font-size: 12px; color: var(--gray-500); }
-
-  /* Nav Tabs */
-  .nav {
-    display: flex;
-    gap: 4px;
-    padding: 12px 20px;
-    background: white;
-    border-bottom: 1px solid var(--gray-200);
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-  .nav::-webkit-scrollbar { display: none; }
-  .nav-btn {
-    padding: 7px 14px;
-    border-radius: 20px;
-    border: none;
-    background: transparent;
-    color: var(--gray-500);
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: all 0.15s;
-  }
-  .nav-btn.active {
-    background: var(--primary-light);
-    color: var(--primary);
-    font-weight: 600;
-  }
-  .nav-btn:hover:not(.active) { background: var(--gray-100); color: var(--gray-700); }
-
-  /* Layout */
-  .main { max-width: 480px; margin: 0 auto; padding: 16px 16px 80px; }
-  .section { display: none; }
-  .section.active { display: block; }
-
-  /* Cards */
-  .card {
-    background: white;
-    border-radius: var(--radius);
-    padding: 16px;
-    margin-bottom: 12px;
-    box-shadow: var(--shadow);
-  }
-  .card-title {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--gray-500);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 12px;
-  }
-
-  /* Next Dose Banner */
-  .next-dose-banner {
-    background: linear-gradient(135deg, var(--primary), #7c3aed);
-    color: white;
-    border-radius: var(--radius);
-    padding: 20px;
-    margin-bottom: 12px;
-    position: relative;
-    overflow: hidden;
-  }
-  .next-dose-banner::after {
-    content: '';
-    position: absolute;
-    right: -20px; top: -20px;
-    width: 100px; height: 100px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.1);
-  }
-  .next-dose-label { font-size: 12px; opacity: 0.85; margin-bottom: 4px; }
-  .next-dose-date { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
-  .next-dose-sub { font-size: 13px; opacity: 0.85; }
-  .days-badge {
-    display: inline-block;
-    background: rgba(255,255,255,0.25);
-    border-radius: 20px;
-    padding: 4px 12px;
-    font-size: 13px;
-    font-weight: 600;
-    margin-top: 10px;
-  }
-
-  /* Stats Row */
-  .stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
-  .stat-card {
-    background: white;
-    border-radius: var(--radius);
-    padding: 14px 12px;
-    box-shadow: var(--shadow);
-    text-align: center;
-  }
-  .stat-val { font-size: 22px; font-weight: 700; color: var(--primary); }
-  .stat-lbl { font-size: 11px; color: var(--gray-500); margin-top: 2px; }
-
-  /* Weight Change */
-  .weight-change { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
-  .change-chip {
-    display: inline-flex; align-items: center; gap: 3px;
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: 600;
-  }
-  .change-chip.loss { background: var(--success-light); color: var(--success); }
-  .change-chip.gain { background: var(--danger-light); color: var(--danger); }
-  .change-chip.same { background: var(--gray-100); color: var(--gray-500); }
-
-  /* Form */
-  .form-group { margin-bottom: 14px; }
-  label { display: block; font-size: 13px; font-weight: 500; color: var(--gray-700); margin-bottom: 5px; }
-  input, select, textarea {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid var(--gray-300);
-    border-radius: 8px;
-    font-size: 14px;
-    font-family: inherit;
-    color: var(--gray-900);
-    background: white;
-    transition: border-color 0.15s;
-    outline: none;
-  }
-  input:focus, select:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,0.1); }
-  textarea { resize: vertical; min-height: 70px; }
-
-  .btn {
-    padding: 11px 20px;
-    border-radius: 8px;
-    border: none;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s;
-    display: inline-flex; align-items: center; gap: 6px;
-  }
-  .btn-primary { background: var(--primary); color: white; width: 100%; justify-content: center; }
-  .btn-primary:hover { background: #4338ca; }
-  .btn-danger { background: var(--danger-light); color: var(--danger); padding: 6px 10px; font-size: 12px; }
-  .btn-danger:hover { background: var(--danger); color: white; }
-  .btn-sm { padding: 5px 10px; font-size: 12px; }
-
-  /* Dose selector */
-  .dose-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-  .dose-opt {
-    padding: 10px;
-    border: 2px solid var(--gray-200);
-    border-radius: 8px;
-    text-align: center;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--gray-500);
-    transition: all 0.15s;
-    background: white;
-  }
-  .dose-opt:hover { border-color: var(--primary); color: var(--primary); }
-  .dose-opt.selected { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
-  .dose-opt .dose-sub { font-size: 11px; font-weight: 400; }
-
-  /* Site selector */
-  .site-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
-  .site-opt {
-    padding: 8px;
-    border: 2px solid var(--gray-200);
-    border-radius: 8px;
-    text-align: center;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--gray-500);
-    transition: all 0.15s;
-    background: white;
-  }
-  .site-opt:hover { border-color: var(--primary); color: var(--primary); }
-  .site-opt.selected { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
-
-  /* Side effects */
-  .se-grid { display: flex; flex-wrap: wrap; gap: 6px; }
-  .se-chip {
-    padding: 6px 12px;
-    border: 1.5px solid var(--gray-200);
-    border-radius: 20px;
-    font-size: 12px;
-    cursor: pointer;
-    color: var(--gray-500);
-    transition: all 0.15s;
-    background: white;
-  }
-  .se-chip:hover { border-color: var(--warning); color: var(--warning); }
-  .se-chip.selected { border-color: var(--warning); background: var(--warning-light); color: #92400e; }
-
-  /* Severity slider */
-  .severity-row { display: flex; gap: 6px; margin-top: 6px; }
-  .sev-opt {
-    flex: 1;
-    padding: 7px;
-    border: 2px solid var(--gray-200);
-    border-radius: 6px;
-    text-align: center;
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-  .sev-opt[data-sev="1"].selected { border-color: var(--success); background: var(--success-light); color: #065f46; }
-  .sev-opt[data-sev="2"].selected { border-color: var(--warning); background: var(--warning-light); color: #92400e; }
-  .sev-opt[data-sev="3"].selected { border-color: var(--danger); background: var(--danger-light); color: #991b1b; }
-
-  /* Log list */
-  .log-item {
-    border: 1px solid var(--gray-200);
-    border-radius: 8px;
-    padding: 12px;
-    margin-bottom: 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 8px;
-  }
-  .log-item:last-child { margin-bottom: 0; }
-  .log-date { font-size: 11px; color: var(--gray-500); }
-  .log-main { font-size: 14px; font-weight: 600; margin: 2px 0; }
-  .log-sub { font-size: 12px; color: var(--gray-500); }
-  .dose-badge {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 600;
-    background: var(--primary-light);
-    color: var(--primary);
-  }
-  .empty-state {
-    text-align: center;
-    padding: 40px 20px;
-    color: var(--gray-500);
-  }
-  .empty-state .empty-icon { font-size: 40px; margin-bottom: 8px; }
-  .empty-state p { font-size: 14px; }
-
-  /* Weight chart */
-  .chart-wrap { width: 100%; overflow-x: auto; }
-  svg.chart { display: block; }
-
-  /* Scrollable list */
-  .log-list { max-height: 350px; overflow-y: auto; padding-right: 2px; }
-  .log-list::-webkit-scrollbar { width: 4px; }
-  .log-list::-webkit-scrollbar-track { background: transparent; }
-  .log-list::-webkit-scrollbar-thumb { background: var(--gray-200); border-radius: 2px; }
-
-  /* Info chips row */
-  .chips-row { display: flex; flex-wrap: wrap; gap: 5px; }
-  .info-chip {
-    display: inline-flex; align-items: center; gap: 3px;
-    padding: 3px 9px;
-    background: var(--gray-100);
-    border-radius: 20px;
-    font-size: 11px;
-    color: var(--gray-700);
-  }
-
-  /* Toast */
-  .toast {
-    position: fixed;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%) translateY(100px);
-    background: var(--gray-900);
-    color: white;
-    padding: 12px 20px;
-    border-radius: 30px;
-    font-size: 14px;
-    font-weight: 500;
-    transition: transform 0.3s ease;
-    z-index: 999;
-    white-space: nowrap;
-  }
-  .toast.show { transform: translateX(-50%) translateY(0); }
-
-  /* Divider */
-  .divider { height: 1px; background: var(--gray-100); margin: 12px 0; }
-
-  /* Progress bar */
-  .progress-bar { background: var(--gray-100); border-radius: 4px; height: 6px; overflow: hidden; }
-  .progress-fill { height: 100%; background: var(--primary); border-radius: 4px; transition: width 0.3s; }
-
-  /* Drug level gauge */
-  .gauge-wrap { text-align: center; margin-bottom: 4px; }
-  .level-meta-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin: 4px 0 14px; }
-  .level-meta-cell {
-    text-align: center; padding: 9px 6px;
-    background: var(--gray-50); border-radius: 8px;
-  }
-  .level-meta-label { font-size: 10px; color: var(--gray-500); margin-bottom: 2px; }
-  .level-meta-val { font-size: 15px; font-weight: 700; color: var(--gray-900); }
-  .level-meta-unit { font-size: 10px; font-weight: 400; color: var(--gray-500); }
-  .pk-note {
-    margin-top: 10px; padding: 8px 10px;
-    background: #fef3c7; border-radius: 8px;
-    font-size: 11px; color: #92400e; line-height: 1.5;
-  }
-
-  /* Combo chart */
-  .zoom-btn {
-    padding: 5px 11px; border: 1px solid var(--gray-200); border-radius: 6px;
-    background: white; font-size: 15px; font-weight: 600; cursor: pointer;
-    color: var(--gray-700); transition: all 0.12s; line-height: 1;
-  }
-  .zoom-btn:hover { background: var(--gray-50); border-color: var(--gray-400); }
-  .chart-canvas {
-    cursor: grab; touch-action: none; display: block;
-    width: 100%; border-radius: 8px; background: #f9fafb;
-  }
-  .chart-canvas:active { cursor: grabbing; }
-  .chart-legend {
-    display: flex; gap: 14px; justify-content: center;
-    flex-wrap: wrap; margin-top: 10px;
-  }
-  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--gray-500); }
-
-  /* Responsive */
-  @media (max-width: 360px) {
-    .dose-grid { grid-template-columns: repeat(2, 1fr); }
-    .stats-row { grid-template-columns: 1fr 1fr; }
-  }
-</style>
-</head>
-<body>
-
-<div class="header">
-  <div class="header-icon">💉</div>
-  <div>
-    <h1>마운자로 트래커</h1>
-    <p>Tirzepatide 복약 관리</p>
-  </div>
-</div>
-
-<nav class="nav">
-  <button class="nav-btn active" onclick="showTab('home')">홈</button>
-  <button class="nav-btn" onclick="showTab('injection')">주사 기록</button>
-  <button class="nav-btn" onclick="showTab('weight')">체중</button>
-  <button class="nav-btn" onclick="showTab('side-effects')">부작용</button>
-  <button class="nav-btn" onclick="showTab('history')">기록 보기</button>
-  <button class="nav-btn" onclick="showTab('analysis')">통합 그래프</button>
-</nav>
-
-<div class="main">
-
-  <!-- HOME TAB -->
-  <div class="section active" id="tab-home">
-
-    <div id="next-dose-banner" class="next-dose-banner">
-      <div class="next-dose-label">다음 주사 예정일</div>
-      <div class="next-dose-date" id="next-date">-</div>
-      <div class="next-dose-sub" id="next-dose-info">아직 주사 기록이 없습니다</div>
-      <div class="days-badge" id="days-left">기록을 추가해주세요</div>
-    </div>
-
-    <div class="stats-row">
-      <div class="stat-card">
-        <div class="stat-val" id="stat-weeks">0</div>
-        <div class="stat-lbl">총 주사 횟수</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-val" id="stat-current-dose">-</div>
-        <div class="stat-lbl">현재 용량</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-val" id="stat-weight-loss">-</div>
-        <div class="stat-lbl">총 감량(kg)</div>
-      </div>
-    </div>
-
-    <!-- Drug Level Card -->
-    <div class="card" id="drug-level-card">
-      <div class="card-title">체내 잔류 농도</div>
-      <div class="empty-state" style="padding:20px">
-        <div class="empty-icon">🧪</div>
-        <p>주사 기록을 추가하면 잔류 농도가 표시됩니다</p>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">체중 변화</div>
-      <div id="weight-summary">
-        <div class="empty-state" style="padding:20px">
-          <div class="empty-icon">⚖️</div>
-          <p>체중 기록이 없습니다</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">최근 주사 기록</div>
-      <div id="recent-injections">
-        <div class="empty-state" style="padding:20px">
-          <div class="empty-icon">💉</div>
-          <p>주사 기록이 없습니다</p>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- INJECTION TAB -->
-  <div class="section" id="tab-injection">
-    <div class="card">
-      <div class="card-title">주사 기록 추가</div>
-
-      <div class="form-group">
-        <label>주사 날짜</label>
-        <input type="date" id="inj-date">
-      </div>
-
-      <div class="form-group">
-        <label>용량 선택</label>
-        <div class="dose-grid" id="dose-grid">
-          <div class="dose-opt" data-dose="2.5" onclick="selectDose(this)">
-            2.5mg<br><span class="dose-sub">1단계 시작</span>
-          </div>
-          <div class="dose-opt" data-dose="5" onclick="selectDose(this)">
-            5mg<br><span class="dose-sub">2단계</span>
-          </div>
-          <div class="dose-opt" data-dose="7.5" onclick="selectDose(this)">
-            7.5mg<br><span class="dose-sub">3단계</span>
-          </div>
-          <div class="dose-opt" data-dose="10" onclick="selectDose(this)">
-            10mg<br><span class="dose-sub">4단계</span>
-          </div>
-          <div class="dose-opt" data-dose="12.5" onclick="selectDose(this)">
-            12.5mg<br><span class="dose-sub">5단계</span>
-          </div>
-          <div class="dose-opt" data-dose="15" onclick="selectDose(this)">
-            15mg<br><span class="dose-sub">최대 용량</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>주사 부위</label>
-        <div class="site-grid" id="site-grid">
-          <div class="site-opt" data-site="복부 좌" onclick="selectSite(this)">복부 좌</div>
-          <div class="site-opt" data-site="복부 우" onclick="selectSite(this)">복부 우</div>
-          <div class="site-opt" data-site="허벅지 좌" onclick="selectSite(this)">허벅지 좌</div>
-          <div class="site-opt" data-site="허벅지 우" onclick="selectSite(this)">허벅지 우</div>
-          <div class="site-opt" data-site="상완 좌" onclick="selectSite(this)">상완 좌</div>
-          <div class="site-opt" data-site="상완 우" onclick="selectSite(this)">상완 우</div>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>메모 (선택)</label>
-        <textarea id="inj-memo" placeholder="특이사항을 기록하세요..."></textarea>
-      </div>
-
-      <button class="btn btn-primary" onclick="saveInjection()">💉 주사 기록 저장</button>
-    </div>
-  </div>
-
-  <!-- WEIGHT TAB -->
-  <div class="section" id="tab-weight">
-    <div class="card">
-      <div class="card-title">체중 기록 추가</div>
-
-      <div class="form-group">
-        <label>측정 날짜</label>
-        <input type="date" id="wt-date">
-      </div>
-      <div class="form-group">
-        <label>체중 (kg)</label>
-        <input type="number" id="wt-value" placeholder="예: 75.5" step="0.1" min="30" max="300">
-      </div>
-      <div class="form-group">
-        <label>메모 (선택)</label>
-        <input type="text" id="wt-memo" placeholder="예: 공복 측정">
-      </div>
-
-      <button class="btn btn-primary" onclick="saveWeight()">⚖️ 체중 저장</button>
-    </div>
-
-    <div class="card">
-      <div class="card-title">체중 추이</div>
-      <div class="chart-wrap" id="weight-chart-wrap">
-        <div class="empty-state">
-          <div class="empty-icon">📊</div>
-          <p>체중 기록이 2개 이상이면 그래프가 표시됩니다</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">체중 기록 목록</div>
-      <div class="log-list" id="weight-list">
-        <div class="empty-state">
-          <div class="empty-icon">⚖️</div>
-          <p>기록이 없습니다</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- SIDE EFFECTS TAB -->
-  <div class="section" id="tab-side-effects">
-    <div class="card">
-      <div class="card-title">부작용 기록 추가</div>
-
-      <div class="form-group">
-        <label>날짜</label>
-        <input type="date" id="se-date">
-      </div>
-
-      <div class="form-group">
-        <label>증상 선택 (복수 선택 가능)</label>
-        <div class="se-grid" id="se-grid">
-          <div class="se-chip" onclick="toggleSE(this)">메스꺼움</div>
-          <div class="se-chip" onclick="toggleSE(this)">구토</div>
-          <div class="se-chip" onclick="toggleSE(this)">설사</div>
-          <div class="se-chip" onclick="toggleSE(this)">변비</div>
-          <div class="se-chip" onclick="toggleSE(this)">복통</div>
-          <div class="se-chip" onclick="toggleSE(this)">소화불량</div>
-          <div class="se-chip" onclick="toggleSE(this)">식욕부진</div>
-          <div class="se-chip" onclick="toggleSE(this)">피로감</div>
-          <div class="se-chip" onclick="toggleSE(this)">두통</div>
-          <div class="se-chip" onclick="toggleSE(this)">어지러움</div>
-          <div class="se-chip" onclick="toggleSE(this)">주사부위 반응</div>
-          <div class="se-chip" onclick="toggleSE(this)">저혈당 증상</div>
-          <div class="se-chip" onclick="toggleSE(this)">기타</div>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>증상 강도</label>
-        <div class="severity-row" id="severity-row">
-          <div class="sev-opt" data-sev="1" onclick="selectSev(this)">가벼움</div>
-          <div class="sev-opt" data-sev="2" onclick="selectSev(this)">중간</div>
-          <div class="sev-opt" data-sev="3" onclick="selectSev(this)">심함</div>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>추가 메모</label>
-        <textarea id="se-memo" placeholder="증상에 대한 자세한 내용을 적어주세요..."></textarea>
-      </div>
-
-      <button class="btn btn-primary" onclick="saveSideEffect()">⚠️ 부작용 기록 저장</button>
-    </div>
-
-    <div class="card">
-      <div class="card-title">부작용 기록 목록</div>
-      <div class="log-list" id="se-list">
-        <div class="empty-state">
-          <div class="empty-icon">📋</div>
-          <p>기록이 없습니다</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- HISTORY TAB -->
-  <div class="section" id="tab-history">
-    <div class="card">
-      <div class="card-title">전체 주사 기록</div>
-      <div class="log-list" id="inj-list">
-        <div class="empty-state">
-          <div class="empty-icon">💉</div>
-          <p>기록이 없습니다</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="card" style="border:1px solid var(--danger-light)">
-      <div class="card-title" style="color:var(--danger)">데이터 관리</div>
-      <p style="font-size:13px;color:var(--gray-500);margin-bottom:12px">모든 데이터를 내보내거나 초기화할 수 있습니다.</p>
-      <div style="display:flex;gap:8px">
-        <button class="btn" style="flex:1;background:var(--success-light);color:var(--success);justify-content:center" onclick="exportData()">내보내기 (JSON)</button>
-        <button class="btn" style="flex:1;background:var(--danger-light);color:var(--danger);justify-content:center" onclick="resetData()">전체 초기화</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ANALYSIS TAB -->
-  <div class="section" id="tab-analysis">
-    <div class="card" style="padding:14px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div class="card-title" style="margin-bottom:0">농도 · 체중 통합 그래프</div>
-        <div style="display:flex;gap:5px">
-          <button class="zoom-btn" title="확대" onclick="ccZoom(0.6)">+</button>
-          <button class="zoom-btn" title="축소" onclick="ccZoom(1.6)">−</button>
-          <button class="zoom-btn" onclick="ccReset()" style="font-size:11px;padding:5px 9px">전체</button>
-        </div>
-      </div>
-      <canvas id="combo-chart" class="chart-canvas"></canvas>
-      <div class="chart-legend">
-        <div class="legend-item">
-          <div style="width:18px;height:2px;background:#6366f1;border-radius:1px"></div>잔류 농도 (mg)
-        </div>
-        <div class="legend-item">
-          <div style="width:10px;height:10px;border-radius:50%;background:#10b981;flex-shrink:0"></div>체중 (kg)
-        </div>
-        <div class="legend-item">
-          <div style="width:2px;height:13px;background:rgba(99,102,241,0.35)"></div>주사일
-        </div>
-        <div class="legend-item">
-          <div style="width:2px;height:13px;background:rgba(239,68,68,0.5)"></div>오늘
-        </div>
-      </div>
-      <div style="text-align:center;margin-top:6px;font-size:10px;color:var(--gray-400)">
-        드래그로 이동 &nbsp;·&nbsp; 스크롤 또는 핀치로 확대/축소
-      </div>
-    </div>
-  </div>
-
-</div>
-
-<div class="toast" id="toast"></div>
-
-<script>
-// ─── State ────────────────────────────────────────────
-const DB = {
-  get: (k, def = []) => { try { return JSON.parse(localStorage.getItem(k)) ?? def; } catch { return def; } },
-  set: (k, v) => localStorage.setItem(k, JSON.stringify(v))
-};
-
-let injections = DB.get('mj_injections');
-let weights    = DB.get('mj_weights');
-let sideEffects = DB.get('mj_se');
-
-let selectedDose = null;
-let selectedSite = null;
-let selectedSEList = [];
-let selectedSev = null;
-
-// ─── Tab navigation ───────────────────────────────────
-function showTab(name) {
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-' + name).classList.add('active');
-  event.currentTarget.classList.add('active');
-  renderAll();
-  if (name === 'analysis') setTimeout(ccInit, 30);
-}
-
-// ─── Init date inputs ─────────────────────────────────
-function todayStr() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function initDates() {
-  const t = todayStr();
-  ['inj-date', 'wt-date', 'se-date'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el && !el.value) el.value = t;
-  });
-}
-
-// ─── Selectors ────────────────────────────────────────
-function selectDose(el) {
-  document.querySelectorAll('.dose-opt').forEach(e => e.classList.remove('selected'));
-  el.classList.add('selected');
-  selectedDose = el.dataset.dose;
-}
-function selectSite(el) {
-  document.querySelectorAll('.site-opt').forEach(e => e.classList.remove('selected'));
-  el.classList.add('selected');
-  selectedSite = el.dataset.site;
-}
-function toggleSE(el) {
-  el.classList.toggle('selected');
-  const sym = el.textContent;
-  if (el.classList.contains('selected')) {
-    if (!selectedSEList.includes(sym)) selectedSEList.push(sym);
-  } else {
-    selectedSEList = selectedSEList.filter(s => s !== sym);
-  }
-}
-function selectSev(el) {
-  document.querySelectorAll('.sev-opt').forEach(e => e.classList.remove('selected'));
-  el.classList.add('selected');
-  selectedSev = parseInt(el.dataset.sev);
-}
-
-// ─── Save functions ───────────────────────────────────
-function saveInjection() {
-  const date = document.getElementById('inj-date').value;
-  const memo = document.getElementById('inj-memo').value;
-  if (!date) { showToast('날짜를 선택해주세요'); return; }
-  if (!selectedDose) { showToast('용량을 선택해주세요'); return; }
-  if (!selectedSite) { showToast('주사 부위를 선택해주세요'); return; }
-
-  injections.push({ date, dose: selectedDose, site: selectedSite, memo, id: Date.now() });
-  injections.sort((a, b) => a.date.localeCompare(b.date));
-  DB.set('mj_injections', injections);
-
-  // reset
-  document.querySelectorAll('.dose-opt, .site-opt').forEach(e => e.classList.remove('selected'));
-  document.getElementById('inj-memo').value = '';
-  selectedDose = null; selectedSite = null;
-  showToast('주사 기록이 저장되었습니다 💉');
-  renderAll();
-}
-
-function saveWeight() {
-  const date = document.getElementById('wt-date').value;
-  const val  = parseFloat(document.getElementById('wt-value').value);
-  const memo = document.getElementById('wt-memo').value;
-  if (!date) { showToast('날짜를 선택해주세요'); return; }
-  if (isNaN(val) || val <= 0) { showToast('올바른 체중을 입력해주세요'); return; }
-
-  weights.push({ date, value: val, memo, id: Date.now() });
-  weights.sort((a, b) => a.date.localeCompare(b.date));
-  DB.set('mj_weights', weights);
-
-  document.getElementById('wt-value').value = '';
-  document.getElementById('wt-memo').value = '';
-  showToast('체중이 저장되었습니다 ⚖️');
-  renderAll();
-}
-
-function saveSideEffect() {
-  const date = document.getElementById('se-date').value;
-  const memo = document.getElementById('se-memo').value;
-  if (!date) { showToast('날짜를 선택해주세요'); return; }
-  if (selectedSEList.length === 0) { showToast('증상을 하나 이상 선택해주세요'); return; }
-  if (!selectedSev) { showToast('증상 강도를 선택해주세요'); return; }
-
-  sideEffects.push({ date, symptoms: [...selectedSEList], severity: selectedSev, memo, id: Date.now() });
-  sideEffects.sort((a, b) => a.date.localeCompare(b.date));
-  DB.set('mj_se', sideEffects);
-
-  document.querySelectorAll('.se-chip, .sev-opt').forEach(e => e.classList.remove('selected'));
-  document.getElementById('se-memo').value = '';
-  selectedSEList = []; selectedSev = null;
-  showToast('부작용이 기록되었습니다');
-  renderAll();
-}
-
-// ─── Delete ───────────────────────────────────────────
-function deleteInjection(id) {
-  if (!confirm('이 기록을 삭제할까요?')) return;
-  injections = injections.filter(i => i.id !== id);
-  DB.set('mj_injections', injections);
-  renderAll();
-}
-function deleteWeight(id) {
-  if (!confirm('이 기록을 삭제할까요?')) return;
-  weights = weights.filter(i => i.id !== id);
-  DB.set('mj_weights', weights);
-  renderAll();
-}
-function deleteSE(id) {
-  if (!confirm('이 기록을 삭제할까요?')) return;
-  sideEffects = sideEffects.filter(i => i.id !== id);
-  DB.set('mj_se', sideEffects);
-  renderAll();
-}
-
-// ─── Chart utilities ──────────────────────────────────
-function niceTicks(minV, maxV, target) {
-  const range = maxV - minV;
-  if (range <= 0) return [minV, maxV];
-  const rough = range / target;
-  const mag = Math.pow(10, Math.floor(Math.log10(rough)));
-  const norm = rough / mag;
-  const step = norm < 1.5 ? mag : norm < 3.5 ? 2 * mag : norm < 7.5 ? 5 * mag : 10 * mag;
-  const first = Math.ceil((minV - step * 0.001) / step) * step;
-  const ticks = [];
-  for (let v = first; v <= maxV + step * 0.001; v += step) {
-    ticks.push(parseFloat(v.toFixed(10)));
-  }
-  return ticks.length ? ticks : [minV, maxV];
-}
-
-// ─── Combo Interactive Chart ──────────────────────────
-const CC = {
-  el: null, ctx: null, dpr: 1, W: 0, H: 0,
-  pL: 50, pR: 50, pT: 28, pB: 44,
-  v0: 0, v1: 0,
-  dragging: false, dragClientX: 0, dragV0: 0, dragRange: 0,
-  pinchDist0: 0, pinchV0: 0, pinchV1: 0,
-  _bound: false,
-};
-
-function ccInit() {
-  CC.el = document.getElementById('combo-chart');
-  if (!CC.el) return;
-  CC.ctx = CC.el.getContext('2d');
-  CC.dpr = Math.min(window.devicePixelRatio || 1, 2);
-
-  const container = CC.el.parentElement;
-  const cssW = Math.max(220, container.clientWidth || 340);
-  const cssH = Math.round(Math.min(380, Math.max(250, cssW * 0.66)));
-  CC.el.style.width  = cssW + 'px';
-  CC.el.style.height = cssH + 'px';
-  CC.el.width  = Math.round(cssW * CC.dpr);
-  CC.el.height = Math.round(cssH * CC.dpr);
-  CC.W = cssW; CC.H = cssH;
-  CC.el.style.cursor = 'grab';
-
-  if (!CC._bound) {
-    CC._bound = true;
-
-    CC.el.addEventListener('mousedown', e => {
-      CC.dragging = true;
-      CC.dragClientX = e.clientX;
-      CC.dragV0    = CC.v0;
-      CC.dragRange = CC.v1 - CC.v0;
-      CC.el.style.cursor = 'grabbing';
-    });
-    window.addEventListener('mousemove', e => {
-      if (!CC.dragging || !CC.el) return;
-      const plotW = CC.W - CC.pL - CC.pR;
-      CC.v0 = CC.dragV0 - (e.clientX - CC.dragClientX) / plotW * CC.dragRange;
-      CC.v1 = CC.v0 + CC.dragRange;
-      ccDraw();
-    });
-    window.addEventListener('mouseup', () => {
-      CC.dragging = false;
-      if (CC.el) CC.el.style.cursor = 'grab';
-    });
-    CC.el.addEventListener('wheel', e => {
-      e.preventDefault();
-      const rect = CC.el.getBoundingClientRect();
-      ccZoom(e.deltaY > 0 ? 1.13 : 0.88, e.clientX - rect.left);
-    }, { passive: false });
-
-    CC.el.addEventListener('touchstart', e => {
-      e.preventDefault();
-      if (e.touches.length === 1) {
-        CC.dragging    = true;
-        CC.dragClientX = e.touches[0].clientX;
-        CC.dragV0      = CC.v0;
-        CC.dragRange   = CC.v1 - CC.v0;
-      } else if (e.touches.length === 2) {
-        CC.dragging   = false;
-        CC.pinchDist0 = Math.hypot(
-          e.touches[0].clientX - e.touches[1].clientX,
-          e.touches[0].clientY - e.touches[1].clientY
-        );
-        CC.pinchV0 = CC.v0; CC.pinchV1 = CC.v1;
-      }
-    }, { passive: false });
-
-    CC.el.addEventListener('touchmove', e => {
-      e.preventDefault();
-      if (e.touches.length === 1 && CC.dragging) {
-        const plotW = CC.W - CC.pL - CC.pR;
-        CC.v0 = CC.dragV0 - (e.touches[0].clientX - CC.dragClientX) / plotW * CC.dragRange;
-        CC.v1 = CC.v0 + CC.dragRange;
-        ccDraw();
-      } else if (e.touches.length === 2 && CC.pinchDist0 > 0) {
-        const dist = Math.hypot(
-          e.touches[0].clientX - e.touches[1].clientX,
-          e.touches[0].clientY - e.touches[1].clientY
-        );
-        const newRange = Math.max(3 * 864e5, Math.min(5 * 365 * 864e5,
-          (CC.pinchV1 - CC.pinchV0) * CC.pinchDist0 / dist));
-        const mid = (CC.pinchV0 + CC.pinchV1) / 2;
-        CC.v0 = mid - newRange / 2; CC.v1 = mid + newRange / 2;
-        ccDraw();
-      }
-    }, { passive: false });
-
-    CC.el.addEventListener('touchend', () => { CC.dragging = false; CC.pinchDist0 = 0; });
-  }
-
-  if (CC.v0 === 0 && CC.v1 === 0) ccReset();
-  else ccDraw();
-}
-
-function ccReset() {
-  const allMs = [
-    ...injections.map(i => new Date(i.date + 'T12:00:00').getTime()),
-    ...weights.map(w => new Date(w.date + 'T12:00:00').getTime()),
-  ];
-  const now = Date.now();
-  CC.v0 = allMs.length ? Math.min(...allMs) - 5 * 864e5 : now - 14 * 864e5;
-  CC.v1 = allMs.length ? Math.max(now, Math.max(...allMs)) + 10 * 864e5 : now + 14 * 864e5;
-  ccDraw();
-}
-
-function ccZoom(factor, pivotX) {
-  const plotW = CC.W - CC.pL - CC.pR;
-  const ratio  = pivotX !== undefined ? Math.max(0, Math.min(1, (pivotX - CC.pL) / plotW)) : 0.5;
-  const range  = CC.v1 - CC.v0;
-  const newRange = Math.max(3 * 864e5, Math.min(5 * 365 * 864e5, range * factor));
-  const pivot  = CC.v0 + range * ratio;
-  CC.v0 = pivot - newRange * ratio;
-  CC.v1 = pivot + newRange * (1 - ratio);
-  ccDraw();
-}
-
-function ccDraw() {
-  const { el, ctx, dpr, W, H, pL, pR, pT, pB, v0, v1 } = CC;
-  if (!el || !ctx || W === 0) return;
-
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  const plotW = W - pL - pR, plotH = H - pT - pB;
-  const range = v1 - v0;
-  const DAY   = 864e5;
-  const xOf   = ms => pL + (ms - v0) / range * plotW;
-
-  // ── Background ───────────────────────────────────────
-  ctx.fillStyle = '#f9fafb'; ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = '#fff';    ctx.fillRect(pL, pT, plotW, plotH);
-
-  // ── Drug concentration data ───────────────────────────
-  const steps = Math.min(Math.ceil(plotW * 1.5), 600);
-  const drugPts = [];
-  for (let i = 0; i <= steps; i++) {
-    const ms = v0 + (i / steps) * range;
-    drugPts.push({ x: pL + (i / steps) * plotW, v: calcDrugLevelAt(ms) });
-  }
-  const rawMaxDrug = Math.max(
-    ...drugPts.map(p => p.v),
-    ...injections.map(i => parseFloat(i.dose)), 0.5
-  );
-  const drugTicks  = niceTicks(0, rawMaxDrug * 1.2, 5);
-  const maxDrugAxis = drugTicks[drugTicks.length - 1] || 1;
-  const yDrug = v => pT + plotH * (1 - v / maxDrugAxis);
-
-  // ── Weight data ───────────────────────────────────────
-  const allWts = weights
-    .map(w => ({ ms: new Date(w.date + 'T12:00:00').getTime(), v: w.value }))
-    .sort((a, b) => a.ms - b.ms);
-
-  let yWt, wtTicks;
-  if (allWts.length > 0) {
-    const vals = allWts.map(p => p.v);
-    const wMin = Math.min(...vals), wMax = Math.max(...vals);
-    const margin = Math.max((wMax - wMin) * 0.3, 0.5);
-    wtTicks = niceTicks(wMin - margin, wMax + margin, 5);
-    const minWtAxis = wtTicks[0], maxWtAxis = wtTicks[wtTicks.length - 1];
-    yWt = v => pT + plotH * (1 - (v - minWtAxis) / (maxWtAxis - minWtAxis));
-  }
-
-  // ── X-axis ticks ─────────────────────────────────────
-  const xIntervals = [DAY, 2*DAY, 3*DAY, 7*DAY, 14*DAY, 30*DAY, 60*DAY, 90*DAY, 180*DAY, 365*DAY];
-  const xInterval  = xIntervals.find(iv => range / iv <= 9) || 365 * DAY;
-  const xFmt = ms => {
-    const d = new Date(ms);
-    if (xInterval < 30 * DAY)  return `${d.getMonth()+1}/${d.getDate()}`;
-    if (xInterval < 90 * DAY)  return `${d.getMonth()+1}월`;
-    return `${d.getFullYear()}.${d.getMonth()+1}`;
-  };
-  const xTicks = [];
-  for (let t = Math.ceil(v0 / xInterval) * xInterval; t <= v1; t += xInterval) xTicks.push(t);
-
-  // ── Clip to plot area ─────────────────────────────────
-  ctx.save();
-  ctx.beginPath(); ctx.rect(pL, pT, plotW, plotH); ctx.clip();
-
-  // Grid – vertical (x)
-  ctx.strokeStyle = '#f3f4f6'; ctx.lineWidth = 1;
-  for (const t of xTicks) {
-    const x = xOf(t);
-    ctx.beginPath(); ctx.moveTo(x, pT); ctx.lineTo(x, pT + plotH); ctx.stroke();
-  }
-  // Grid – horizontal (drug)
-  for (const tick of drugTicks) {
-    const y = yDrug(tick);
-    if (y < pT || y > pT + plotH) continue;
-    ctx.beginPath(); ctx.moveTo(pL, y); ctx.lineTo(pL + plotW, y); ctx.stroke();
-  }
-
-  // ── Injection day bands ───────────────────────────────
-  for (const inj of injections) {
-    const x = xOf(new Date(inj.date + 'T12:00:00').getTime());
-    if (x < pL - 1 || x > pL + plotW + 1) continue;
-    ctx.strokeStyle = 'rgba(99,102,241,0.22)';
-    ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
-    ctx.beginPath(); ctx.moveTo(x, pT); ctx.lineTo(x, pT + plotH); ctx.stroke();
-    ctx.setLineDash([]);
-  }
-
-  // ── Drug concentration area + line ────────────────────
-  if (injections.length > 0) {
-    const grad = ctx.createLinearGradient(0, pT, 0, pT + plotH);
-    grad.addColorStop(0, 'rgba(99,102,241,0.22)');
-    grad.addColorStop(1, 'rgba(99,102,241,0.01)');
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.moveTo(drugPts[0].x, pT + plotH);
-    for (const p of drugPts) ctx.lineTo(p.x, yDrug(p.v));
-    ctx.lineTo(drugPts[drugPts.length - 1].x, pT + plotH);
-    ctx.closePath(); ctx.fill();
-
-    ctx.strokeStyle = '#6366f1'; ctx.lineWidth = 2;
-    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(drugPts[0].x, yDrug(drugPts[0].v));
-    for (let i = 1; i < drugPts.length; i++) ctx.lineTo(drugPts[i].x, yDrug(drugPts[i].v));
-    ctx.stroke();
-  }
-
-  // ── Weight line + dots ────────────────────────────────
-  if (allWts.length > 0 && yWt) {
-    // draw line through all visible + one beyond each edge
-    const vis = allWts.filter(p => xOf(p.ms) >= pL - 40 && xOf(p.ms) <= pL + plotW + 40);
-    if (vis.length >= 2) {
-      ctx.strokeStyle = '#10b981'; ctx.lineWidth = 2.5;
-      ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-      ctx.beginPath(); ctx.moveTo(xOf(vis[0].ms), yWt(vis[0].v));
-      for (let i = 1; i < vis.length; i++) ctx.lineTo(xOf(vis[i].ms), yWt(vis[i].v));
-      ctx.stroke();
-    }
-    // Dots
-    for (const p of allWts) {
-      const x = xOf(p.ms), y = yWt(p.v);
-      if (x < pL - 8 || x > pL + plotW + 8) continue;
-      ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2);
-      ctx.fillStyle = '#fff'; ctx.fill();
-      ctx.strokeStyle = '#10b981'; ctx.lineWidth = 2.5; ctx.stroke();
-      // Weight value label (only when zoomed in enough)
-      if (range < 120 * DAY || allWts.length <= 10) {
-        ctx.fillStyle = '#059669';
-        ctx.font = '9px -apple-system,sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(p.v.toFixed(1), x, y - 10);
-      }
-    }
-  }
-
-  // ── Today line ────────────────────────────────────────
-  const nowX = xOf(Date.now());
-  if (nowX >= pL && nowX <= pL + plotW) {
-    ctx.strokeStyle = 'rgba(239,68,68,0.55)'; ctx.lineWidth = 1.5;
-    ctx.setLineDash([5, 3]);
-    ctx.beginPath(); ctx.moveTo(nowX, pT); ctx.lineTo(nowX, pT + plotH); ctx.stroke();
-    ctx.setLineDash([]);
-  }
-
-  ctx.restore(); // end clip
-
-  // ── Injection triangles (above plot) ─────────────────
-  let lastInjLabelX = -Infinity;
-  for (const inj of injections) {
-    const x = xOf(new Date(inj.date + 'T12:00:00').getTime());
-    if (x < pL || x > pL + plotW) continue;
-    if (x - lastInjLabelX < 22) continue;
-    lastInjLabelX = x;
-    ctx.fillStyle = 'rgba(99,102,241,0.6)';
-    ctx.beginPath();
-    ctx.moveTo(x, pT + 1); ctx.lineTo(x - 4, pT - 6); ctx.lineTo(x + 4, pT - 6);
-    ctx.closePath(); ctx.fill();
-    // dose label (only when zoomed in)
-    if (range < 60 * DAY) {
-      ctx.fillStyle = '#4f46e5';
-      ctx.font = 'bold 9px -apple-system,sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(inj.dose + 'mg', x, pT - 8);
-    }
-  }
-
-  // ── Plot border ───────────────────────────────────────
-  ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1;
-  ctx.strokeRect(pL, pT, plotW, plotH);
-
-  // ── Left Y axis: drug (mg) ────────────────────────────
-  ctx.textAlign = 'right'; ctx.font = '10px -apple-system,sans-serif';
-  for (const tick of drugTicks) {
-    const y = yDrug(tick);
-    if (y < pT || y > pT + plotH) continue;
-    ctx.fillStyle = '#818cf8';
-    ctx.fillText(tick % 1 === 0 ? tick : tick.toFixed(1), pL - 6, y + 3.5);
-    ctx.strokeStyle = '#c7d2fe'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(pL, y); ctx.lineTo(pL - 4, y); ctx.stroke();
-  }
-  ctx.save();
-  ctx.translate(12, pT + plotH / 2); ctx.rotate(-Math.PI / 2);
-  ctx.textAlign = 'center'; ctx.fillStyle = '#6366f1';
-  ctx.font = 'bold 9px -apple-system,sans-serif';
-  ctx.fillText('잔류 농도 (mg)', 0, 0);
-  ctx.restore();
-
-  // ── Right Y axis: weight (kg) ─────────────────────────
-  if (allWts.length > 0 && wtTicks && yWt) {
-    ctx.textAlign = 'left'; ctx.font = '10px -apple-system,sans-serif';
-    for (const tick of wtTicks) {
-      const y = yWt(tick);
-      if (y < pT || y > pT + plotH) continue;
-      ctx.fillStyle = '#34d399';
-      ctx.fillText(tick % 1 === 0 ? tick : tick.toFixed(1), pL + plotW + 6, y + 3.5);
-      ctx.strokeStyle = '#a7f3d0'; ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(pL + plotW, y); ctx.lineTo(pL + plotW + 4, y); ctx.stroke();
-    }
-    ctx.save();
-    ctx.translate(W - 11, pT + plotH / 2); ctx.rotate(Math.PI / 2);
-    ctx.textAlign = 'center'; ctx.fillStyle = '#10b981';
-    ctx.font = 'bold 9px -apple-system,sans-serif';
-    ctx.fillText('체중 (kg)', 0, 0);
-    ctx.restore();
-  }
-
-  // ── X axis labels ─────────────────────────────────────
-  ctx.fillStyle = '#9ca3af'; ctx.font = '10px -apple-system,sans-serif'; ctx.textAlign = 'center';
-  for (const t of xTicks) {
-    const x = xOf(t);
-    if (x < pL + 6 || x > pL + plotW - 6) continue;
-    ctx.fillText(xFmt(t), x, pT + plotH + 16);
-    ctx.strokeStyle = '#d1d5db'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(x, pT + plotH); ctx.lineTo(x, pT + plotH + 4); ctx.stroke();
-  }
-
-  // ── "오늘" label ──────────────────────────────────────
-  if (nowX >= pL && nowX <= pL + plotW) {
-    ctx.font = '9px -apple-system,sans-serif'; ctx.fillStyle = 'rgba(239,68,68,0.85)';
-    ctx.textAlign = nowX > pL + plotW - 22 ? 'right' : nowX < pL + 22 ? 'left' : 'center';
-    ctx.fillText('오늘', Math.max(pL + 2, Math.min(nowX, pL + plotW - 2)), pT + plotH + 30);
-  }
-
-  // ── Empty state ───────────────────────────────────────
-  if (injections.length === 0 && allWts.length === 0) {
-    ctx.fillStyle = '#9ca3af'; ctx.font = '13px -apple-system,sans-serif'; ctx.textAlign = 'center';
-    ctx.fillText('주사 또는 체중 기록을 추가해주세요', pL + plotW / 2, pT + plotH / 2);
-  }
-}
-
-// ─── Drug Level (Pharmacokinetics) ────────────────────
-const HALF_LIFE = 5; // tirzepatide t½ ≈ 5 days
-
-function calcDrugLevelAt(ms) {
-  let total = 0;
-  for (const inj of injections) {
-    const injMs = new Date(inj.date + 'T12:00:00').getTime();
-    const days = (ms - injMs) / 86400000;
-    if (days < 0) continue;
-    total += parseFloat(inj.dose) * Math.pow(0.5, days / HALF_LIFE);
-  }
-  return total;
-}
-
-function renderDrugLevel() {
-  const card = document.getElementById('drug-level-card');
-
-  if (injections.length === 0) {
-    card.innerHTML = `
-      <div class="card-title">체내 잔류 농도</div>
-      <div class="empty-state" style="padding:20px">
-        <div class="empty-icon">🧪</div>
-        <p>주사 기록을 추가하면 잔류 농도가 표시됩니다</p>
-      </div>`;
-    return;
-  }
-
-  const now = new Date(); now.setHours(12, 0, 0, 0);
-  const nowMs = now.getTime();
-  const currentLevel = calcDrugLevelAt(nowMs);
-
-  const last = injections[injections.length - 1];
-  const lastMs = new Date(last.date + 'T12:00:00').getTime();
-  const daysSinceLast = (nowMs - lastMs) / 86400000;
-
-  // Steady-state peak for current dose: D / (1 - 0.5^(7/t½))
-  const currentDose = parseFloat(last.dose);
-  const weekDecay = Math.pow(0.5, 7 / HALF_LIFE);
-  const ssPeak = currentDose / (1 - weekDecay);
-  const pct = Math.min(currentLevel / ssPeak, 1.0);
-
-  // Next injection & trough
-  const nextMs = lastMs + 7 * 86400000;
-  const daysToNext = (nextMs - nowMs) / 86400000;
-  const troughLevel = calcDrugLevelAt(nextMs);
-
-  // Color + label by percentage of steady-state peak
-  let color, label;
-  if (pct >= 0.55)      { color = '#10b981'; label = '치료 범위'; }
-  else if (pct >= 0.30) { color = '#f59e0b'; label = '감소 중'; }
-  else                  { color = '#ef4444'; label = '저농도'; }
-
-  // Arc gauge: semicircle, center (100,110), radius 72
-  const cx = 100, cy = 110, R = 72;
-  const arcLen = Math.PI * R; // ≈ 226.2
-  const filledLen = (arcLen * pct).toFixed(1);
-
-  // Mini projection chart: 7 days from last injection
-  const miniW = 290, miniH = 68;
-  const pL = 6, pR = 6, pT = 12, pB = 18;
-  const pts = [];
-  for (let d = 0; d <= 7; d += 0.2) {
-    pts.push({ d, v: calcDrugLevelAt(lastMs + d * 86400000) });
-  }
-  pts.push({ d: 7, v: troughLevel });
-
-  const maxV = Math.max(...pts.map(p => p.v), 0.01);
-  const px2 = d => pL + (miniW - pL - pR) * (d / 7);
-  const py2 = v => pT + (miniH - pT - pB) * (1 - v / maxV);
-
-  const polyPts  = pts.map(p => `${px2(p.d).toFixed(1)},${py2(p.v).toFixed(1)}`).join(' ');
-  const areaPts  = `${px2(0).toFixed(1)},${miniH - pB} ` + polyPts + ` ${px2(7).toFixed(1)},${miniH - pB}`;
-
-  const nowDay    = Math.min(Math.max(daysSinceLast, 0), 7);
-  const nowX      = px2(nowDay).toFixed(1);
-  const nowY      = py2(currentLevel).toFixed(1);
-  const nowAnchor = nowDay < 1 ? 'start' : nowDay > 6 ? 'end' : 'middle';
-
-  const daysToNextStr = daysToNext < 0
-    ? `<span style="color:var(--danger)">지남</span>`
-    : `${daysToNext.toFixed(1)}<span class="level-meta-unit">일</span>`;
-
-  card.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <div class="card-title" style="margin-bottom:0">체내 잔류 농도</div>
-      <span style="font-size:11px;color:var(--gray-500)">반감기 ${HALF_LIFE}일 기준</span>
-    </div>
-
-    <div class="gauge-wrap">
-      <svg width="200" height="118" viewBox="0 0 200 118">
-        <!-- Background track -->
-        <path d="M ${cx-R},${cy} A ${R},${R} 0 0,0 ${cx+R},${cy}"
-          fill="none" stroke="#e5e7eb" stroke-width="13" stroke-linecap="round"/>
-        <!-- Filled track -->
-        <path d="M ${cx-R},${cy} A ${R},${R} 0 0,0 ${cx+R},${cy}"
-          fill="none" stroke="${color}" stroke-width="13" stroke-linecap="round"
-          stroke-dasharray="${filledLen} ${arcLen.toFixed(1)}" stroke-dashoffset="0"/>
-        <!-- Value -->
-        <text x="${cx}" y="${cy-26}" text-anchor="middle" font-size="30"
-          font-weight="700" fill="#111827">${currentLevel.toFixed(2)}</text>
-        <text x="${cx}" y="${cy-8}" text-anchor="middle" font-size="13"
-          fill="#6b7280">mg 잔류 추정</text>
-        <!-- Badge -->
-        <rect x="${cx-34}" y="${cy+2}" width="68" height="20" rx="10" fill="${color}22"/>
-        <text x="${cx}" y="${cy+15}" text-anchor="middle" font-size="11"
-          font-weight="600" fill="${color}">${(pct * 100).toFixed(0)}% · ${label}</text>
-        <!-- Scale labels -->
-        <text x="${cx-R}" y="${cy+15}" text-anchor="start" font-size="9" fill="#9ca3af">0</text>
-        <text x="${cx+R}" y="${cy+15}" text-anchor="end" font-size="9" fill="#9ca3af">${ssPeak.toFixed(1)}mg</text>
-      </svg>
-    </div>
-
-    <div class="level-meta-grid">
-      <div class="level-meta-cell">
-        <div class="level-meta-label">주사 후 경과</div>
-        <div class="level-meta-val">${Math.max(daysSinceLast, 0).toFixed(1)}<span class="level-meta-unit">일</span></div>
-      </div>
-      <div class="level-meta-cell">
-        <div class="level-meta-label">다음 주사까지</div>
-        <div class="level-meta-val">${daysToNextStr}</div>
-      </div>
-      <div class="level-meta-cell">
-        <div class="level-meta-label">주사 시 잔류</div>
-        <div class="level-meta-val">${troughLevel.toFixed(2)}<span class="level-meta-unit">mg</span></div>
-      </div>
-    </div>
-
-    <div style="font-size:11px;color:var(--gray-500);margin-bottom:5px">이번 주 농도 예측 곡선</div>
-    <div style="overflow-x:auto">
-      <svg width="${miniW}" height="${miniH}" viewBox="0 0 ${miniW} ${miniH}" style="display:block">
-        <!-- Mid gridline -->
-        <line x1="${pL}" y1="${(pT + (miniH-pT-pB)*0.5).toFixed(1)}"
-              x2="${miniW-pR}" y2="${(pT + (miniH-pT-pB)*0.5).toFixed(1)}"
-              stroke="#f3f4f6" stroke-width="1"/>
-        <!-- Area -->
-        <polyline points="${areaPts}" fill="${color}15" stroke="none"/>
-        <!-- Line -->
-        <polyline points="${polyPts}" fill="none" stroke="${color}"
-          stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-        <!-- Now line -->
-        <line x1="${nowX}" y1="${pT}" x2="${nowX}" y2="${miniH-pB}"
-          stroke="#9ca3af" stroke-width="1" stroke-dasharray="3,2"/>
-        <!-- Now dot -->
-        <circle cx="${nowX}" cy="${nowY}" r="4.5"
-          fill="white" stroke="${color}" stroke-width="2.5"/>
-        <!-- "지금" label -->
-        <text x="${nowX}" y="${pT-1}" text-anchor="${nowAnchor}"
-          font-size="9" fill="#6b7280" font-weight="600">지금</text>
-        <!-- X labels -->
-        <text x="${px2(0).toFixed(1)}" y="${miniH}" text-anchor="start"   font-size="9" fill="#9ca3af">주사일</text>
-        <text x="${px2(3.5).toFixed(1)}" y="${miniH}" text-anchor="middle" font-size="9" fill="#9ca3af">3.5일</text>
-        <text x="${px2(7).toFixed(1)}" y="${miniH}" text-anchor="end"     font-size="9" fill="#9ca3af">7일후</text>
-      </svg>
-    </div>
-
-    <div class="pk-note">
-      ⚠️ 반감기(5일) 기반 단순 추정값으로, 개인별 흡수·분포 차이로 실제 농도와 다를 수 있습니다. 의학적 판단에 사용하지 마세요.
-    </div>`;
-}
-
-// ─── Render functions ─────────────────────────────────
-function renderAll() {
-  renderHome();
-  renderDrugLevel();
-  renderWeightChart();
-  renderWeightList();
-  renderSEList();
-  renderInjList();
-}
-
-function fmt(dateStr) {
-  const d = new Date(dateStr + 'T00:00:00');
-  return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
-}
-function fmtFull(dateStr) {
-  const d = new Date(dateStr + 'T00:00:00');
-  const days = ['일','월','화','수','목','금','토'];
-  return `${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
-}
-
-function renderHome() {
-  // Next injection
-  const last = injections[injections.length - 1];
-  if (last) {
-    const lastD = new Date(last.date + 'T00:00:00');
-    const nextD = new Date(lastD);
-    nextD.setDate(nextD.getDate() + 7);
-    const today = new Date(); today.setHours(0,0,0,0);
-    const diff = Math.round((nextD - today) / 86400000);
-
-    document.getElementById('next-date').textContent = fmtFull(nextD.toISOString().slice(0,10));
     document.getElementById('next-dose-info').textContent = `현재 용량: ${last.dose}mg`;
 
     let badge, bannerClass = 'next-dose-banner';
