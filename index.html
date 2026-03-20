@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>마운자로 트래커</title>
+<title>Mounjaro Tracker</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -382,14 +382,54 @@
     .dose-grid { grid-template-columns: repeat(2, 1fr); }
     .stats-row { grid-template-columns: 1fr 1fr; }
   }
+
+  /* Exercise Zone Pills */
+  .zone-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 13px; border-radius: 20px;
+    font-size: 12px; font-weight: 700;
+  }
+  .zone-pill.peak { background: #fee2e2; color: #dc2626; }
+  .zone-pill.mid  { background: #d1fae5; color: #059669; }
+  .zone-pill.low  { background: #fef3c7; color: #d97706; }
+
+  /* Exercise section items */
+  .ex-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px; background: var(--gray-50); border-radius: 8px; margin-bottom: 10px;
+  }
+  .ex-item-icon { font-size: 20px; flex-shrink: 0; }
+  .ex-item-body { font-size: 14px; color: var(--gray-700); line-height: 1.5; }
+  .ex-item-label {
+    font-size: 11px; font-weight: 600; color: var(--gray-500);
+    text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;
+  }
+  .ex-avoid {
+    background: #fff5f5; border: 1px solid #fee2e2;
+  }
+  .ex-avoid .ex-item-body { font-size: 13px; color: #7f1d1d; }
+  .se-modifier {
+    padding: 8px 12px; background: #fff7ed; border: 1px solid #fed7aa;
+    border-radius: 8px; font-size: 12px; color: #c2410c; font-weight: 600; margin-bottom: 10px;
+  }
+  .prof-chip { background: var(--gray-100); border-radius: 20px; padding: 3px 10px; font-size: 12px; color: var(--gray-700); }
 </style>
 </head>
 <body>
 
 <div class="header">
-  <div class="header-icon">💉</div>
+  <div class="header-icon">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14.5 7.5a2 2 0 0 0-2.83 0L3 16.17a2 2 0 0 0 0 2.83l2.83 2.83a2 2 0 0 0 2.83 0L17.5 13a2 2 0 0 0 0-2.83L14.5 7.5z"/>
+      <line x1="10" y1="11" x2="13" y2="14"/>
+      <line x1="12" y1="9" x2="15" y2="12"/>
+      <line x1="3" y1="21" x2="6" y2="18"/>
+      <line x1="18" y1="3" x2="21" y2="6"/>
+      <line x1="17" y1="4" x2="20" y2="7"/>
+    </svg>
+  </div>
   <div>
-    <h1>마운자로 트래커</h1>
+    <h1>Mounjaro Tracker</h1>
     <p>Tirzepatide 복약 관리</p>
   </div>
 </div>
@@ -399,8 +439,10 @@
   <button class="nav-btn" onclick="showTab('injection')">주사 기록</button>
   <button class="nav-btn" onclick="showTab('weight')">체중</button>
   <button class="nav-btn" onclick="showTab('side-effects')">부작용</button>
+  <button class="nav-btn" onclick="showTab('exercise')">운동</button>
   <button class="nav-btn" onclick="showTab('history')">기록 보기</button>
   <button class="nav-btn" onclick="showTab('analysis')">통합 그래프</button>
+  <button class="nav-btn" onclick="showTab('profile')">프로필</button>
 </nav>
 
 <div class="main">
@@ -441,6 +483,9 @@
         <p>주사 기록을 추가하면 잔류 농도가 표시됩니다</p>
       </div>
     </div>
+
+    <!-- Exercise Home Card -->
+    <div class="card" id="exercise-home-card" style="display:none"></div>
 
     <!-- Home Chart Card -->
     <div class="card" id="home-chart-card" style="display:none;padding:14px"></div>
@@ -646,6 +691,54 @@
     </div>
   </div>
 
+  <!-- EXERCISE TAB -->
+  <div class="section" id="tab-exercise">
+    <div id="exercise-page-content">
+      <div class="empty-state" style="padding:40px 20px">
+        <div class="empty-icon">🏋️</div>
+        <p>주사 기록을 추가하면 운동 추천이 표시됩니다</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROFILE TAB -->
+  <div class="section" id="tab-profile">
+    <div class="card">
+      <div class="card-title">개인 프로필 설정</div>
+      <p style="font-size:13px;color:var(--gray-500);margin-bottom:14px">프로필을 설정하면 농도 구간에 맞는 맞춤 운동 플랜을 받을 수 있습니다.</p>
+
+      <div class="form-group">
+        <label>나이</label>
+        <input type="number" id="prof-age" placeholder="예: 35" min="18" max="100">
+      </div>
+
+      <div class="form-group">
+        <label>성별</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px" id="prof-gender-grid">
+          <div class="site-opt" data-gender="남성" onclick="selectGender(this)">남성</div>
+          <div class="site-opt" data-gender="여성" onclick="selectGender(this)">여성</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>운동 경험</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px" id="prof-level-grid">
+          <div class="site-opt" data-level="beginner" onclick="selectLevel(this)">
+            입문<br><span style="font-size:10px;font-weight:400">주 2~3회</span>
+          </div>
+          <div class="site-opt" data-level="intermediate" onclick="selectLevel(this)">
+            중급<br><span style="font-size:10px;font-weight:400">주 4~5회</span>
+          </div>
+          <div class="site-opt" data-level="advanced" onclick="selectLevel(this)">
+            상급<br><span style="font-size:10px;font-weight:400">주 5~6회</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="saveProfile()">저장</button>
+    </div>
+  </div>
+
   <!-- ANALYSIS TAB -->
   <div class="section" id="tab-analysis">
     <div class="card" style="padding:14px">
@@ -695,6 +788,7 @@ const DB = {
 let injections = DB.get('mj_injections');
 let weights    = DB.get('mj_weights');
 let sideEffects = DB.get('mj_se');
+let userProfile = DB.get('mj_profile', {});
 
 let selectedDose = null;
 let selectedSite = null;
@@ -704,11 +798,15 @@ let selectedSev = null;
 // ─── Tab navigation ───────────────────────────────────
 function showTab(name) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => {
+    b.classList.remove('active');
+    if ((b.getAttribute('onclick') || '').includes(`'${name}'`)) b.classList.add('active');
+  });
   document.getElementById('tab-' + name).classList.add('active');
-  event.currentTarget.classList.add('active');
   renderAll();
   if (name === 'analysis') setTimeout(ccInit, 30);
+  if (name === 'exercise') setTimeout(renderExercisePage, 0);
+  if (name === 'profile') setTimeout(initProfileForm, 0);
 }
 
 // ─── Init date inputs ─────────────────────────────────
@@ -1112,12 +1210,14 @@ function ccDraw(inst) {
   }
 
   // ── X-axis ticks ─────────────────────────────────────
-  const xIntervals = [DAY, 2*DAY, 3*DAY, 7*DAY, 14*DAY, 30*DAY, 60*DAY, 90*DAY, 180*DAY, 365*DAY];
+  const HOUR = 3600000;
+  const xIntervals = [6*HOUR, 12*HOUR, DAY, 2*DAY, 3*DAY, 7*DAY, 14*DAY, 30*DAY, 60*DAY, 90*DAY, 180*DAY, 365*DAY];
   const xInterval  = xIntervals.find(iv => range / iv <= 9) || 365 * DAY;
   const xFmt = ms => {
     const d = new Date(ms);
-    if (xInterval < 30 * DAY)  return `${d.getMonth()+1}/${d.getDate()}`;
-    if (xInterval < 90 * DAY)  return `${d.getMonth()+1}월`;
+    if (xInterval <= 12 * HOUR) return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}시`;
+    if (xInterval < 30 * DAY)   return `${d.getMonth()+1}/${d.getDate()}`;
+    if (xInterval < 90 * DAY)   return `${d.getMonth()+1}월`;
     return `${d.getFullYear()}.${d.getMonth()+1}`;
   };
   const xTicks = [];
@@ -1327,15 +1427,29 @@ function ccDraw(inst) {
 }
 
 // ─── Drug Level (Pharmacokinetics) ────────────────────
-const HALF_LIFE = 5; // tirzepatide t½ ≈ 5 days
+// 1-compartment 1st-order absorption model (tirzepatide)
+// Tmax ≈ 48h (peak), t½ = 5 days = 120h (elimination)
+const HALF_LIFE   = 5;            // days — kept for SS reference calculations
+const PK_HALF_H   = 120;          // elimination half-life in hours
+const PK_KE       = Math.LN2 / PK_HALF_H;   // ~0.005776 h⁻¹
+const PK_KA       = 0.051;        // absorption rate constant h⁻¹ → Tmax ≈ 48h
+const PK_KA_KE    = PK_KA / (PK_KA - PK_KE);
+const PK_TMAX     = Math.log(PK_KA / PK_KE) / (PK_KA - PK_KE); // ≈ 48h
+const PK_CMAX_F   = PK_KA_KE * (Math.exp(-PK_KE * PK_TMAX) - Math.exp(-PK_KA * PK_TMAX));
+
+// Returns normalized concentration profile (Cmax = 1.0 at Tmax)
+function pkProfile(hours) {
+  if (hours <= 0) return 0;
+  return PK_KA_KE * (Math.exp(-PK_KE * hours) - Math.exp(-PK_KA * hours)) / PK_CMAX_F;
+}
 
 function calcDrugLevelAt(ms) {
   let total = 0;
   for (const inj of injections) {
     const injMs = new Date(inj.date + 'T12:00:00').getTime();
-    const days = (ms - injMs) / 86400000;
-    if (days < 0) continue;
-    total += parseFloat(inj.dose) * Math.pow(0.5, days / HALF_LIFE);
+    const hours = (ms - injMs) / 3600000;
+    if (hours < 0) continue;
+    total += parseFloat(inj.dose) * pkProfile(hours);
   }
   return total;
 }
@@ -1355,13 +1469,13 @@ function renderDrugLevel() {
     return;
   }
 
-  const now = new Date(); now.setHours(12, 0, 0, 0);
-  const nowMs = now.getTime();
+  const nowMs = Date.now();
   const currentLevel = calcDrugLevelAt(nowMs);
 
   const last = injections[injections.length - 1];
   const lastMs = new Date(last.date + 'T12:00:00').getTime();
-  const daysSinceLast = (nowMs - lastMs) / 86400000;
+  const hoursSinceLast = (nowMs - lastMs) / 3600000;
+  const daysSinceLast = hoursSinceLast / 24;
 
   // Steady-state peak for current dose: D / (1 - 0.5^(7/t½))
   const currentDose = parseFloat(last.dose);
@@ -1407,7 +1521,7 @@ function renderDrugLevel() {
     <div class="level-meta-grid">
       <div class="level-meta-cell">
         <div class="level-meta-label">주사 후 경과</div>
-        <div class="level-meta-val">${Math.max(daysSinceLast, 0).toFixed(1)}<span class="level-meta-unit">일</span></div>
+        <div class="level-meta-val">${Math.max(hoursSinceLast, 0).toFixed(0)}<span class="level-meta-unit">h</span></div>
       </div>
       <div class="level-meta-cell">
         <div class="level-meta-label">다음 주사까지</div>
@@ -1420,8 +1534,19 @@ function renderDrugLevel() {
     </div>
 
     <div class="pk-note" style="margin-top:10px">
-      ⚠️ 반감기(5일) 기반 단순 추정값으로, 개인별 흡수·분포 차이로 실제 농도와 다를 수 있습니다. 의학적 판단에 사용하지 마세요.
-    </div>`;
+      ⚠️ 1구획 1차 흡수 모델(Tmax≈48h, t½=5일) 기반 추정값으로, 개인차로 실제 농도와 다를 수 있습니다. 의학적 판단에 사용하지 마세요.
+    </div>
+    ${(() => {
+      const ex = calcExerciseRecommendation();
+      if (!ex) return '';
+      return `<div class="divider"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div style="font-size:13px;font-weight:600;color:var(--gray-700)">운동 권장 구간</div>
+        <span style="background:${ex.bg};color:${ex.color};font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px">${ex.icon} ${ex.label}</span>
+      </div>
+      <div style="font-size:12px;color:var(--gray-500);margin-bottom:8px">전략: ${ex.strategy}</div>
+      <button onclick="showTab('exercise')" style="width:100%;padding:9px;border:1.5px solid ${ex.color};border-radius:8px;background:${ex.bg};color:${ex.color};font-size:13px;font-weight:600;cursor:pointer">운동 플랜 자세히 보기 →</button>`;
+    })()}`;
 
   // Populate home chart card separately to avoid SVG overflow overlap
   const chartCard = document.getElementById('home-chart-card');
@@ -1452,8 +1577,7 @@ function calcFoodNoiseAlert() {
   const ssTrough = ssPeak * wDecay;
   const θFN = ssTrough * 0.6; // Food Noise threshold
 
-  const now = new Date(); now.setHours(12, 0, 0, 0);
-  const nowMs = now.getTime();
+  const nowMs = Date.now();
   const currentLevel = calcDrugLevelAt(nowMs);
   const DAY = 86400000;
 
@@ -1503,8 +1627,7 @@ function renderFoodNoiseAlert() {
 function calcDoseOptimization() {
   if (injections.length === 0) return null;
 
-  const now = new Date(); now.setHours(12, 0, 0, 0);
-  const nowMs = now.getTime();
+  const nowMs = Date.now();
   const DAY = 86400000;
 
   // 1. Weight slope (4-week)
@@ -1603,12 +1726,258 @@ function renderDoseOptimization() {
     <div style="font-size:10px;color:var(--gray-500);margin-top:4px">⚠️ 본 분석은 참고용이며 최종 판단은 반드시 의료진과 상의하세요.</div>`;
 }
 
+// ─── Profile ──────────────────────────────────────────
+function selectGender(el) {
+  document.querySelectorAll('#prof-gender-grid .site-opt').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function selectLevel(el) {
+  document.querySelectorAll('#prof-level-grid .site-opt').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function saveProfile() {
+  const age = parseInt(document.getElementById('prof-age').value);
+  const genderEl = document.querySelector('#prof-gender-grid .site-opt.selected');
+  const levelEl  = document.querySelector('#prof-level-grid .site-opt.selected');
+  userProfile = {
+    age:    isNaN(age) ? null : age,
+    gender: genderEl ? genderEl.dataset.gender : null,
+    level:  levelEl  ? levelEl.dataset.level   : null,
+  };
+  DB.set('mj_profile', userProfile);
+  showToast('프로필이 저장되었습니다');
+  renderAll();
+}
+function initProfileForm() {
+  const prof = userProfile;
+  const ageEl = document.getElementById('prof-age');
+  if (ageEl && prof.age) ageEl.value = prof.age;
+  if (prof.gender) {
+    document.querySelectorAll('#prof-gender-grid .site-opt').forEach(el => {
+      el.classList.toggle('selected', el.dataset.gender === prof.gender);
+    });
+  }
+  if (prof.level) {
+    document.querySelectorAll('#prof-level-grid .site-opt').forEach(el => {
+      el.classList.toggle('selected', el.dataset.level === prof.level);
+    });
+  }
+}
+
+// ─── Exercise Recommendation Engine ───────────────────
+function getRecentSideEffects() {
+  const cutoff = Date.now() - 48 * 3600000; // last 48 hours
+  return sideEffects.filter(se => new Date(se.date + 'T12:00:00').getTime() >= cutoff);
+}
+
+function calcConcentrationZone() {
+  if (injections.length === 0) return null;
+  const last = injections[injections.length - 1];
+  const currentDose = parseFloat(last.dose);
+  const wDecay  = Math.pow(0.5, 7 / HALF_LIFE);
+  const ssPeak  = currentDose / (1 - wDecay);
+  const ssTrough = ssPeak * wDecay;
+  const theta = ssTrough;
+  const level = calcDrugLevelAt(Date.now());
+  if (level >= 2 * theta) return { zone: 'peak', level, theta };
+  if (level >= theta)     return { zone: 'mid',  level, theta };
+  return                         { zone: 'low',  level, theta };
+}
+
+function calcExerciseRecommendation() {
+  const zoneInfo = calcConcentrationZone();
+  if (!zoneInfo) return null;
+  const { zone, level, theta } = zoneInfo;
+
+  const recentSE  = getRecentSideEffects();
+  const hasSevere = recentSE.some(se => se.severity >= 2 &&
+    (se.symptoms.includes('메스꺼움') || se.symptoms.includes('어지러움') || se.symptoms.includes('구토')));
+  const hasMild   = recentSE.length > 0 && !hasSevere;
+
+  const lv = userProfile.level || 'beginner';
+
+  const ZONES = {
+    peak: {
+      label: '고농도 (Peak)', color: '#dc2626', bg: '#fee2e2', icon: '🔴',
+      strategy: '근손실 방지 전략',
+      cardio:   { beginner: '가벼운 걷기 20분', intermediate: '빠른 걷기 또는 사이클 30분', advanced: '중강도 유산소 30~40분' },
+      strength: { beginner: '자중 스트레칭 + 간단 저항운동', intermediate: '가벼운 저항운동 (15~20rep)', advanced: '중량 줄여 고반복 (15~20rep)' },
+      avoid: '고강도 HIIT, 최대 중량 훈련, 장시간 공복 운동',
+      tip: '이 구간은 근손실이 쉬운 시기입니다. 단백질 섭취(체중×1.6g/일)를 우선하고 충분한 회복에 집중하세요.',
+      frequency: { beginner: '주 2~3회', intermediate: '주 3~4회', advanced: '주 4~5회' },
+    },
+    mid: {
+      label: '중간 농도 (Mid)', color: '#059669', bg: '#d1fae5', icon: '🟢',
+      strategy: '지방 연소 극대화 전략',
+      cardio:   { beginner: '빠른 걷기 또는 가벼운 조깅 30분', intermediate: '중강도 유산소 40분 (HRmax 60~70%)', advanced: '달리기·사이클 45분 (HRmax 65~75%)' },
+      strength: { beginner: '기본 근력 루틴 (3세트×12rep)', intermediate: '전신 근력 또는 분할 운동', advanced: '분할 근력 + 복합 운동' },
+      avoid: '공복 고강도 운동, 과도한 탄수화물 보충',
+      tip: '지방 연소에 가장 유리한 구간입니다. 유산소를 메인으로 하되 근육량 유지를 위한 저항운동도 병행하세요.',
+      frequency: { beginner: '주 3~4회', intermediate: '주 4~5회', advanced: '주 5~6회' },
+    },
+    low: {
+      label: '저농도 (Low)', color: '#d97706', bg: '#fef3c7', icon: '🟡',
+      strategy: '컨디션 확인 후 고강도 가능',
+      cardio:   { beginner: '중강도 걷기·조깅 30분', intermediate: '인터벌 런닝 또는 HIIT 30분', advanced: 'HIIT 또는 고강도 유산소 35~45분' },
+      strength: { beginner: '기본 전신 근력 3세트', intermediate: '근력 위주 + 복합 운동', advanced: '최대 중량 80~90% 근력 운동' },
+      avoid: '식욕 회복 구간이므로 과식 주의, 운동 후 과도한 보상 심리 경계',
+      tip: '약효가 약해지는 구간입니다. 식욕이 돌아올 수 있으니 식단 관리에 더 신경 쓰세요. 컨디션이 좋다면 고강도 운동도 가능합니다.',
+      frequency: { beginner: '주 3회', intermediate: '주 4~5회', advanced: '주 5~6회' },
+    },
+  };
+
+  const base = ZONES[zone];
+  const downgrade = { advanced: 'intermediate', intermediate: 'beginner', beginner: 'rest' };
+
+  let effectiveLv = lv;
+  let intensityModifier = '';
+
+  if (hasSevere) {
+    intensityModifier = '⚠️ 심한 부작용으로 강도 하향 조정';
+    effectiveLv = downgrade[lv] || 'rest';
+  } else if (hasMild) {
+    intensityModifier = '⚠️ 경미한 부작용으로 강도 소폭 하향';
+    effectiveLv = downgrade[lv] || 'beginner';
+    if (effectiveLv === 'rest') effectiveLv = 'beginner';
+  }
+
+  if (effectiveLv === 'rest') {
+    return {
+      zone, level, theta, intensityModifier,
+      label: base.label, color: base.color, bg: base.bg, icon: base.icon, strategy: base.strategy,
+      cardio: '오늘은 휴식을 권장합니다. 가벼운 스트레칭만 하세요.',
+      strength: '충분한 수분 섭취와 소화하기 쉬운 식단을 유지하세요.',
+      avoid: base.avoid,
+      tip: '심한 부작용이 있을 때는 무리한 운동을 피하세요. 몸의 신호를 들어주세요.',
+      frequency: '회복 후 재개',
+      hasSideEffects: true,
+    };
+  }
+
+  return {
+    zone, level, theta, intensityModifier,
+    label: base.label, color: base.color, bg: base.bg, icon: base.icon, strategy: base.strategy,
+    cardio:    base.cardio[effectiveLv]    || base.cardio.beginner,
+    strength:  base.strength[effectiveLv]  || base.strength.beginner,
+    avoid:     base.avoid,
+    tip:       base.tip,
+    frequency: base.frequency[effectiveLv] || base.frequency.beginner,
+    hasSideEffects: hasSevere || hasMild,
+  };
+}
+
+function renderExerciseCard() {
+  const card = document.getElementById('exercise-home-card');
+  if (!card) return;
+  const r = calcExerciseRecommendation();
+  if (!r) { card.style.display = 'none'; return; }
+  card.style.display = '';
+
+  const levelLabel = { beginner: '입문', intermediate: '중급', advanced: '상급' };
+
+  card.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div class="card-title" style="margin-bottom:0">오늘의 운동 추천</div>
+      <span style="background:${r.bg};color:${r.color};font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px">${r.icon} ${r.label}</span>
+    </div>
+    ${r.intensityModifier ? `<div class="se-modifier">${r.intensityModifier}</div>` : ''}
+    <div style="font-size:13px;color:var(--gray-700);margin-bottom:5px"><strong>유산소:</strong> ${r.cardio}</div>
+    <div style="font-size:13px;color:var(--gray-700);margin-bottom:10px"><strong>근력:</strong> ${r.strength}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:11px;color:var(--gray-500)">빈도: ${r.frequency}${userProfile.level ? ' · ' + levelLabel[userProfile.level] : ''}</span>
+      <button onclick="showTab('exercise')" style="background:none;border:1px solid ${r.color};border-radius:6px;color:${r.color};font-size:11px;font-weight:600;cursor:pointer;padding:4px 10px">자세히 →</button>
+    </div>`;
+}
+
+function renderExercisePage() {
+  const container = document.getElementById('exercise-page-content');
+  if (!container) return;
+
+  const r = calcExerciseRecommendation();
+  if (!r) {
+    container.innerHTML = `<div class="empty-state" style="padding:40px 20px"><div class="empty-icon">🏋️</div><p>주사 기록을 추가하면 운동 추천이 표시됩니다</p></div>`;
+    return;
+  }
+
+  const prof = userProfile;
+  const levelLabel = { beginner: '입문', intermediate: '중급', advanced: '상급' };
+  const profLv = prof.level ? levelLabel[prof.level] : '미설정';
+
+  container.innerHTML = `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div class="card-title" style="margin-bottom:0">현재 농도 구간</div>
+        <span class="zone-pill ${r.zone}">${r.icon} ${r.label}</span>
+      </div>
+      <div style="font-size:13px;color:var(--gray-700);margin-bottom:3px">현재 잔류 농도: <strong>${r.level.toFixed(2)}mg</strong></div>
+      <div style="font-size:12px;color:var(--gray-500)">기준 농도(θ): ${r.theta.toFixed(2)}mg · 전략: ${r.strategy}</div>
+      ${r.intensityModifier ? `<div class="se-modifier" style="margin-top:10px">${r.intensityModifier}</div>` : ''}
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div class="card-title" style="margin-bottom:0">적용 프로필</div>
+        <button onclick="showTab('profile')" style="background:none;border:none;color:var(--primary);font-size:12px;font-weight:600;cursor:pointer">수정 →</button>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <span class="prof-chip">운동경험: ${profLv}</span>
+        ${prof.gender ? `<span class="prof-chip">${prof.gender}</span>` : ''}
+        ${prof.age    ? `<span class="prof-chip">${prof.age}세</span>` : ''}
+        ${!prof.level ? `<span style="font-size:12px;color:var(--warning)">프로필 설정 시 맞춤 추천 가능</span>` : ''}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">오늘의 운동 권장 플랜</div>
+
+      <div class="ex-item-label">유산소 운동</div>
+      <div class="ex-item">
+        <div class="ex-item-icon">🏃</div>
+        <div class="ex-item-body">${r.cardio}</div>
+      </div>
+
+      <div class="ex-item-label">근력 운동</div>
+      <div class="ex-item">
+        <div class="ex-item-icon">💪</div>
+        <div class="ex-item-body">${r.strength}</div>
+      </div>
+
+      <div class="ex-item-label" style="color:#dc2626">주의 / 피할 것</div>
+      <div class="ex-item ex-avoid">
+        <div class="ex-item-icon">⛔</div>
+        <div class="ex-item-body">${r.avoid}</div>
+      </div>
+
+      <div style="display:flex;justify-content:center;padding:10px 14px;background:${r.bg};border-radius:8px;margin-top:4px">
+        <div style="text-align:center">
+          <div style="font-size:10px;color:var(--gray-500);margin-bottom:2px">권장 운동 빈도</div>
+          <div style="font-size:16px;font-weight:700;color:${r.color}">${r.frequency}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="background:${r.bg};border:1px solid ${r.color}44">
+      <div style="display:flex;gap:10px;align-items:flex-start">
+        <div style="font-size:22px">💡</div>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:${r.color};margin-bottom:5px">${r.strategy}</div>
+          <div style="font-size:13px;color:var(--gray-700);line-height:1.6">${r.tip}</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="font-size:10px;color:var(--gray-500);text-align:center;padding:4px 0 8px">
+      ⚠️ 운동 권장 사항은 약물 농도 기반 참고용이며, 개인 건강 상태에 따라 달라질 수 있습니다.
+    </div>`;
+}
+
 // ─── Render functions ─────────────────────────────────
 function renderAll() {
   renderHome();
   renderFoodNoiseAlert();
   renderDrugLevel();
   renderDoseOptimization();
+  renderExerciseCard();
   renderWeightChart();
   renderWeightList();
   renderSEList();
@@ -1850,6 +2219,7 @@ function showToast(msg) {
 
 // ─── Init ─────────────────────────────────────────────
 initDates();
+initProfileForm();
 renderAll();
 </script>
 </body>
