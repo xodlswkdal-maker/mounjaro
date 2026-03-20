@@ -377,6 +377,30 @@
   }
   .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--gray-500); }
 
+  /* Sub-tabs */
+  .subtab-bar { display: flex; gap: 6px; padding: 10px 0 6px; }
+  .subtab-btn {
+    flex: 1; padding: 8px 4px;
+    border-radius: 8px; border: 1.5px solid var(--gray-200);
+    background: white; color: var(--gray-500);
+    font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s;
+  }
+  .subtab-btn.active { border-color: var(--primary); background: var(--primary-light); color: var(--primary); font-weight: 600; }
+  .subtab-btn:hover:not(.active) { background: var(--gray-100); color: var(--gray-700); }
+  .subsection { display: none; }
+  .subsection.active { display: block; }
+
+  /* Header settings button */
+  .header-btn {
+    margin-left: auto; flex-shrink: 0;
+    width: 34px; height: 34px;
+    border: 1px solid var(--gray-200); background: white;
+    border-radius: 8px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--gray-500); transition: all 0.15s;
+  }
+  .header-btn:hover { background: var(--gray-100); color: var(--gray-700); }
+
   /* Responsive */
   @media (max-width: 360px) {
     .dose-grid { grid-template-columns: repeat(2, 1fr); }
@@ -413,6 +437,79 @@
     border-radius: 8px; font-size: 12px; color: #c2410c; font-weight: 600; margin-bottom: 10px;
   }
   .prof-chip { background: var(--gray-100); border-radius: 20px; padding: 3px 10px; font-size: 12px; color: var(--gray-700); }
+
+  /* Info button */
+  .info-btn {
+    width: 22px; height: 22px;
+    border-radius: 50%; border: 1.5px solid var(--gray-300);
+    background: white; color: var(--gray-500);
+    font-size: 12px; font-weight: 700;
+    cursor: pointer; display: inline-flex;
+    align-items: center; justify-content: center;
+    transition: all 0.15s; line-height: 1; flex-shrink: 0;
+  }
+  .info-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+
+  /* Bottom sheet */
+  .sheet-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 200; opacity: 0; pointer-events: none;
+    transition: opacity 0.25s;
+    display: flex; align-items: flex-end; justify-content: center;
+  }
+  .sheet-overlay.open { opacity: 1; pointer-events: auto; }
+  .bottom-sheet {
+    background: white; border-radius: 20px 20px 0 0;
+    padding: 16px 20px 32px; width: 100%; max-width: 480px;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.32,0.72,0,1);
+    max-height: 75vh; overflow-y: auto;
+  }
+  .sheet-overlay.open .bottom-sheet { transform: translateY(0); }
+  .sheet-handle {
+    width: 36px; height: 4px; background: var(--gray-200);
+    border-radius: 2px; margin: 0 auto 16px;
+  }
+  .sheet-title { font-size: 16px; font-weight: 700; color: var(--gray-900); margin-bottom: 14px; }
+  .sheet-metric-row {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 0; border-bottom: 1px solid var(--gray-100);
+  }
+  .sheet-metric-row:last-of-type { border-bottom: none; }
+  .metric-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+  .sheet-metric-name { font-size: 13px; font-weight: 600; color: var(--gray-900); margin-bottom: 3px; }
+  .sheet-metric-desc { font-size: 12px; color: var(--gray-500); line-height: 1.5; }
+  .sheet-footer {
+    margin-top: 14px; padding: 10px 12px;
+    background: var(--primary-light); border-radius: 8px;
+    font-size: 12px; font-weight: 600; color: var(--primary); text-align: center;
+  }
+
+  /* Timeline */
+  .timeline { padding: 4px 0; }
+  .timeline-item {
+    display: flex; gap: 10px; padding: 10px 0;
+    border-bottom: 1px solid var(--gray-100); align-items: flex-start;
+  }
+  .timeline-item:last-child { border-bottom: none; }
+  .timeline-icon {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; flex-shrink: 0;
+  }
+  .timeline-icon.inj { background: var(--primary-light); }
+  .timeline-icon.wt  { background: var(--success-light); }
+  .timeline-icon.se  { background: var(--warning-light); }
+  .timeline-icon.ex  { background: #fce7f3; }
+  .timeline-body { flex: 1; min-width: 0; }
+  .timeline-date { font-size: 11px; color: var(--gray-500); margin-bottom: 2px; }
+  .timeline-main { font-size: 13px; font-weight: 600; color: var(--gray-900); }
+  .timeline-sub  { font-size: 11px; color: var(--gray-500); margin-top: 1px; }
+
+  /* Exercise goal ring */
+  .goal-ring-wrap { display: flex; flex-direction: column; align-items: center; padding: 8px 0 4px; }
+  .goal-ring-label { font-size: 12px; color: var(--gray-500); margin-top: 4px; }
 </style>
 </head>
 <body>
@@ -432,17 +529,18 @@
     <h1>Mounjaro Tracker</h1>
     <p>Tirzepatide 복약 관리</p>
   </div>
+  <button class="header-btn" onclick="showTab('profile')" title="프로필 설정">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+    </svg>
+  </button>
 </div>
 
 <nav class="nav">
   <button class="nav-btn active" onclick="showTab('home')">홈</button>
-  <button class="nav-btn" onclick="showTab('injection')">주사 기록</button>
-  <button class="nav-btn" onclick="showTab('weight')">체중</button>
-  <button class="nav-btn" onclick="showTab('side-effects')">부작용</button>
-  <button class="nav-btn" onclick="showTab('exercise')">운동</button>
-  <button class="nav-btn" onclick="showTab('history')">기록 보기</button>
-  <button class="nav-btn" onclick="showTab('analysis')">통합 그래프</button>
-  <button class="nav-btn" onclick="showTab('profile')">프로필</button>
+  <button class="nav-btn" onclick="showTab('record')">기록</button>
+  <button class="nav-btn" onclick="showTab('analysis')">루틴</button>
 </nav>
 
 <div class="main">
@@ -484,16 +582,14 @@
       </div>
     </div>
 
-    <!-- Exercise Home Card -->
-    <div class="card" id="exercise-home-card" style="display:none"></div>
-
-    <!-- Home Chart Card -->
+    <!-- Home Chart Card (농도·체중 통합 그래프) -->
     <div class="card" id="home-chart-card" style="display:none;padding:14px"></div>
 
     <!-- Algorithm C: Dose Optimization Card -->
     <div class="card" id="dose-opt-card" style="display:none"></div>
 
-    <div class="card">
+    <!-- Weight Summary -->
+    <div class="card" id="weight-summary-card">
       <div class="card-title">체중 변화</div>
       <div id="weight-summary">
         <div class="empty-state" style="padding:20px">
@@ -503,185 +599,129 @@
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-title">최근 주사 기록</div>
-      <div id="recent-injections">
+  </div>
+
+  <!-- RECORD TAB (주사 + 체중 + 부작용 통합) -->
+  <div class="section" id="tab-record">
+    <div class="subtab-bar">
+      <button class="subtab-btn active" id="srec-inj" onclick="showRecordSub('inj')">💉 주사</button>
+      <button class="subtab-btn"        id="srec-wt"  onclick="showRecordSub('wt')">⚖️ 체중</button>
+      <button class="subtab-btn"        id="srec-se"  onclick="showRecordSub('se')">⚠️ 부작용</button>
+    </div>
+
+    <!-- 주사 기록 -->
+    <div class="subsection active" id="sub-inj">
+      <div class="card">
+        <div class="card-title">주사 기록 추가</div>
+        <div class="form-group">
+          <label>주사 날짜</label>
+          <input type="date" id="inj-date">
+        </div>
+        <div class="form-group">
+          <label>용량 선택</label>
+          <div class="dose-grid" id="dose-grid">
+            <div class="dose-opt" data-dose="2.5" onclick="selectDose(this)">2.5mg<br><span class="dose-sub">1단계 시작</span></div>
+            <div class="dose-opt" data-dose="5"   onclick="selectDose(this)">5mg<br><span class="dose-sub">2단계</span></div>
+            <div class="dose-opt" data-dose="7.5" onclick="selectDose(this)">7.5mg<br><span class="dose-sub">3단계</span></div>
+            <div class="dose-opt" data-dose="10"  onclick="selectDose(this)">10mg<br><span class="dose-sub">4단계</span></div>
+            <div class="dose-opt" data-dose="12.5" onclick="selectDose(this)">12.5mg<br><span class="dose-sub">5단계</span></div>
+            <div class="dose-opt" data-dose="15"  onclick="selectDose(this)">15mg<br><span class="dose-sub">최대 용량</span></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>주사 부위</label>
+          <div class="site-grid" id="site-grid">
+            <div class="site-opt" data-site="복부 좌"  onclick="selectSite(this)">복부 좌</div>
+            <div class="site-opt" data-site="복부 우"  onclick="selectSite(this)">복부 우</div>
+            <div class="site-opt" data-site="허벅지 좌" onclick="selectSite(this)">허벅지 좌</div>
+            <div class="site-opt" data-site="허벅지 우" onclick="selectSite(this)">허벅지 우</div>
+            <div class="site-opt" data-site="상완 좌"  onclick="selectSite(this)">상완 좌</div>
+            <div class="site-opt" data-site="상완 우"  onclick="selectSite(this)">상완 우</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>메모 (선택)</label>
+          <textarea id="inj-memo" placeholder="특이사항을 기록하세요..."></textarea>
+        </div>
+        <button class="btn btn-primary" onclick="saveInjection()">💉 주사 기록 저장</button>
+      </div>
+    </div>
+
+    <!-- 체중 기록 -->
+    <div class="subsection" id="sub-wt">
+      <div class="card">
+        <div class="card-title">체중 기록 추가</div>
+        <div class="form-group">
+          <label>측정 날짜</label>
+          <input type="date" id="wt-date">
+        </div>
+        <div class="form-group">
+          <label>체중 (kg)</label>
+          <input type="number" id="wt-value" placeholder="예: 75.5" step="0.1" min="30" max="300">
+        </div>
+        <div class="form-group">
+          <label>메모 (선택)</label>
+          <input type="text" id="wt-memo" placeholder="예: 공복 측정">
+        </div>
+        <button class="btn btn-primary" onclick="saveWeight()">⚖️ 체중 저장</button>
+      </div>
+    </div>
+
+    <!-- 부작용 기록 -->
+    <div class="subsection" id="sub-se">
+      <div class="card">
+        <div class="card-title">부작용 기록 추가</div>
+        <div class="form-group">
+          <label>날짜</label>
+          <input type="date" id="se-date">
+        </div>
+        <div class="form-group">
+          <label>증상 선택 (복수 선택 가능)</label>
+          <div class="se-grid" id="se-grid">
+            <div class="se-chip" onclick="toggleSE(this)">메스꺼움</div>
+            <div class="se-chip" onclick="toggleSE(this)">구토</div>
+            <div class="se-chip" onclick="toggleSE(this)">설사</div>
+            <div class="se-chip" onclick="toggleSE(this)">변비</div>
+            <div class="se-chip" onclick="toggleSE(this)">복통</div>
+            <div class="se-chip" onclick="toggleSE(this)">소화불량</div>
+            <div class="se-chip" onclick="toggleSE(this)">식욕부진</div>
+            <div class="se-chip" onclick="toggleSE(this)">피로감</div>
+            <div class="se-chip" onclick="toggleSE(this)">두통</div>
+            <div class="se-chip" onclick="toggleSE(this)">어지러움</div>
+            <div class="se-chip" onclick="toggleSE(this)">주사부위 반응</div>
+            <div class="se-chip" onclick="toggleSE(this)">저혈당 증상</div>
+            <div class="se-chip" onclick="toggleSE(this)">기타</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>증상 강도</label>
+          <div class="severity-row" id="severity-row">
+            <div class="sev-opt" data-sev="1" onclick="selectSev(this)">가벼움</div>
+            <div class="sev-opt" data-sev="2" onclick="selectSev(this)">중간</div>
+            <div class="sev-opt" data-sev="3" onclick="selectSev(this)">심함</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>추가 메모</label>
+          <textarea id="se-memo" placeholder="증상에 대한 자세한 내용을 적어주세요..."></textarea>
+        </div>
+        <button class="btn btn-primary" onclick="saveSideEffect()">⚠️ 부작용 기록 저장</button>
+      </div>
+    </div>
+
+    <!-- 통합 타임라인 -->
+    <div class="card" style="margin-top:4px">
+      <div class="card-title">전체 기록 타임라인</div>
+      <div id="unified-timeline">
         <div class="empty-state" style="padding:20px">
-          <div class="empty-icon">💉</div>
-          <p>주사 기록이 없습니다</p>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- INJECTION TAB -->
-  <div class="section" id="tab-injection">
-    <div class="card">
-      <div class="card-title">주사 기록 추가</div>
-
-      <div class="form-group">
-        <label>주사 날짜</label>
-        <input type="date" id="inj-date">
-      </div>
-
-      <div class="form-group">
-        <label>용량 선택</label>
-        <div class="dose-grid" id="dose-grid">
-          <div class="dose-opt" data-dose="2.5" onclick="selectDose(this)">
-            2.5mg<br><span class="dose-sub">1단계 시작</span>
-          </div>
-          <div class="dose-opt" data-dose="5" onclick="selectDose(this)">
-            5mg<br><span class="dose-sub">2단계</span>
-          </div>
-          <div class="dose-opt" data-dose="7.5" onclick="selectDose(this)">
-            7.5mg<br><span class="dose-sub">3단계</span>
-          </div>
-          <div class="dose-opt" data-dose="10" onclick="selectDose(this)">
-            10mg<br><span class="dose-sub">4단계</span>
-          </div>
-          <div class="dose-opt" data-dose="12.5" onclick="selectDose(this)">
-            12.5mg<br><span class="dose-sub">5단계</span>
-          </div>
-          <div class="dose-opt" data-dose="15" onclick="selectDose(this)">
-            15mg<br><span class="dose-sub">최대 용량</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>주사 부위</label>
-        <div class="site-grid" id="site-grid">
-          <div class="site-opt" data-site="복부 좌" onclick="selectSite(this)">복부 좌</div>
-          <div class="site-opt" data-site="복부 우" onclick="selectSite(this)">복부 우</div>
-          <div class="site-opt" data-site="허벅지 좌" onclick="selectSite(this)">허벅지 좌</div>
-          <div class="site-opt" data-site="허벅지 우" onclick="selectSite(this)">허벅지 우</div>
-          <div class="site-opt" data-site="상완 좌" onclick="selectSite(this)">상완 좌</div>
-          <div class="site-opt" data-site="상완 우" onclick="selectSite(this)">상완 우</div>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>메모 (선택)</label>
-        <textarea id="inj-memo" placeholder="특이사항을 기록하세요..."></textarea>
-      </div>
-
-      <button class="btn btn-primary" onclick="saveInjection()">💉 주사 기록 저장</button>
-    </div>
-  </div>
-
-  <!-- WEIGHT TAB -->
-  <div class="section" id="tab-weight">
-    <div class="card">
-      <div class="card-title">체중 기록 추가</div>
-
-      <div class="form-group">
-        <label>측정 날짜</label>
-        <input type="date" id="wt-date">
-      </div>
-      <div class="form-group">
-        <label>체중 (kg)</label>
-        <input type="number" id="wt-value" placeholder="예: 75.5" step="0.1" min="30" max="300">
-      </div>
-      <div class="form-group">
-        <label>메모 (선택)</label>
-        <input type="text" id="wt-memo" placeholder="예: 공복 측정">
-      </div>
-
-      <button class="btn btn-primary" onclick="saveWeight()">⚖️ 체중 저장</button>
-    </div>
-
-    <div class="card">
-      <div class="card-title">체중 추이</div>
-      <div class="chart-wrap" id="weight-chart-wrap">
-        <div class="empty-state">
-          <div class="empty-icon">📊</div>
-          <p>체중 기록이 2개 이상이면 그래프가 표시됩니다</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">체중 기록 목록</div>
-      <div class="log-list" id="weight-list">
-        <div class="empty-state">
-          <div class="empty-icon">⚖️</div>
-          <p>기록이 없습니다</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- SIDE EFFECTS TAB -->
-  <div class="section" id="tab-side-effects">
-    <div class="card">
-      <div class="card-title">부작용 기록 추가</div>
-
-      <div class="form-group">
-        <label>날짜</label>
-        <input type="date" id="se-date">
-      </div>
-
-      <div class="form-group">
-        <label>증상 선택 (복수 선택 가능)</label>
-        <div class="se-grid" id="se-grid">
-          <div class="se-chip" onclick="toggleSE(this)">메스꺼움</div>
-          <div class="se-chip" onclick="toggleSE(this)">구토</div>
-          <div class="se-chip" onclick="toggleSE(this)">설사</div>
-          <div class="se-chip" onclick="toggleSE(this)">변비</div>
-          <div class="se-chip" onclick="toggleSE(this)">복통</div>
-          <div class="se-chip" onclick="toggleSE(this)">소화불량</div>
-          <div class="se-chip" onclick="toggleSE(this)">식욕부진</div>
-          <div class="se-chip" onclick="toggleSE(this)">피로감</div>
-          <div class="se-chip" onclick="toggleSE(this)">두통</div>
-          <div class="se-chip" onclick="toggleSE(this)">어지러움</div>
-          <div class="se-chip" onclick="toggleSE(this)">주사부위 반응</div>
-          <div class="se-chip" onclick="toggleSE(this)">저혈당 증상</div>
-          <div class="se-chip" onclick="toggleSE(this)">기타</div>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>증상 강도</label>
-        <div class="severity-row" id="severity-row">
-          <div class="sev-opt" data-sev="1" onclick="selectSev(this)">가벼움</div>
-          <div class="sev-opt" data-sev="2" onclick="selectSev(this)">중간</div>
-          <div class="sev-opt" data-sev="3" onclick="selectSev(this)">심함</div>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>추가 메모</label>
-        <textarea id="se-memo" placeholder="증상에 대한 자세한 내용을 적어주세요..."></textarea>
-      </div>
-
-      <button class="btn btn-primary" onclick="saveSideEffect()">⚠️ 부작용 기록 저장</button>
-    </div>
-
-    <div class="card">
-      <div class="card-title">부작용 기록 목록</div>
-      <div class="log-list" id="se-list">
-        <div class="empty-state">
           <div class="empty-icon">📋</div>
           <p>기록이 없습니다</p>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- HISTORY TAB -->
-  <div class="section" id="tab-history">
-    <div class="card">
-      <div class="card-title">전체 주사 기록</div>
-      <div class="log-list" id="inj-list">
-        <div class="empty-state">
-          <div class="empty-icon">💉</div>
-          <p>기록이 없습니다</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="card" style="border:1px solid var(--danger-light)">
+    <!-- 데이터 관리 -->
+    <div class="card" style="border:1px solid var(--danger-light);margin-top:4px">
       <div class="card-title" style="color:var(--danger)">데이터 관리</div>
       <p style="font-size:13px;color:var(--gray-500);margin-bottom:12px">모든 데이터를 내보내거나 초기화할 수 있습니다.</p>
       <div style="display:flex;gap:8px">
@@ -691,27 +731,21 @@
     </div>
   </div>
 
-  <!-- EXERCISE TAB -->
-  <div class="section" id="tab-exercise">
-    <div id="exercise-page-content">
-      <div class="empty-state" style="padding:40px 20px">
-        <div class="empty-icon">🏋️</div>
-        <p>주사 기록을 추가하면 운동 추천이 표시됩니다</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- PROFILE TAB -->
+  <!-- PROFILE TAB (헤더 ⚙️ 아이콘으로 접근) -->
   <div class="section" id="tab-profile">
     <div class="card">
-      <div class="card-title">개인 프로필 설정</div>
-      <p style="font-size:13px;color:var(--gray-500);margin-bottom:14px">프로필을 설정하면 농도 구간에 맞는 맞춤 운동 플랜을 받을 수 있습니다.</p>
-
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+        <button onclick="showTab('home')" style="background:none;border:none;color:var(--primary);font-size:13px;font-weight:600;cursor:pointer;padding:0;display:flex;align-items:center;gap:4px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          홈으로
+        </button>
+        <span style="font-size:14px;font-weight:700;color:var(--gray-900)">프로필 설정</span>
+      </div>
+      <p style="font-size:13px;color:var(--gray-500);margin-bottom:14px">설정하면 농도 구간에 맞는 맞춤 운동 플랜을 받을 수 있습니다.</p>
       <div class="form-group">
         <label>나이</label>
         <input type="number" id="prof-age" placeholder="예: 35" min="18" max="100">
       </div>
-
       <div class="form-group">
         <label>성별</label>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px" id="prof-gender-grid">
@@ -719,64 +753,78 @@
           <div class="site-opt" data-gender="여성" onclick="selectGender(this)">여성</div>
         </div>
       </div>
-
       <div class="form-group">
         <label>운동 경험</label>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px" id="prof-level-grid">
-          <div class="site-opt" data-level="beginner" onclick="selectLevel(this)">
-            입문<br><span style="font-size:10px;font-weight:400">주 2~3회</span>
-          </div>
-          <div class="site-opt" data-level="intermediate" onclick="selectLevel(this)">
-            중급<br><span style="font-size:10px;font-weight:400">주 4~5회</span>
-          </div>
-          <div class="site-opt" data-level="advanced" onclick="selectLevel(this)">
-            상급<br><span style="font-size:10px;font-weight:400">주 5~6회</span>
-          </div>
+          <div class="site-opt" data-level="beginner" onclick="selectLevel(this)">입문<br><span style="font-size:10px;font-weight:400">주 2~3회</span></div>
+          <div class="site-opt" data-level="intermediate" onclick="selectLevel(this)">중급<br><span style="font-size:10px;font-weight:400">주 4~5회</span></div>
+          <div class="site-opt" data-level="advanced" onclick="selectLevel(this)">상급<br><span style="font-size:10px;font-weight:400">주 5~6회</span></div>
         </div>
       </div>
-
       <button class="btn btn-primary" onclick="saveProfile()">저장</button>
     </div>
   </div>
 
-  <!-- ANALYSIS TAB -->
+  <!-- ROUTINE TAB (루틴 체계화) -->
   <div class="section" id="tab-analysis">
-    <div class="card" style="padding:14px">
+
+    <!-- 운동 추천 카드 -->
+    <div class="card" id="exercise-home-card" style="display:none"></div>
+
+    <!-- 운동 목표 달성률 -->
+    <div class="card" id="exercise-goal-card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div class="card-title" style="margin-bottom:0">농도 · 체중 통합 그래프</div>
-        <div style="display:flex;gap:5px">
-          <button class="zoom-btn" title="확대" onclick="ccZoom(0.6)">+</button>
-          <button class="zoom-btn" title="축소" onclick="ccZoom(1.6)">−</button>
-          <button class="zoom-btn" onclick="ccReset()" style="font-size:11px;padding:5px 9px">전체</button>
+        <div class="card-title" style="margin-bottom:0">운동 목표 달성률</div>
+        <span style="font-size:11px;color:var(--gray-500)">주 4회 목표</span>
+      </div>
+      <div id="exercise-goal-content">
+        <div class="empty-state" style="padding:20px">
+          <div class="empty-icon">🏋️</div>
+          <p>아직 운동 기록이 없습니다</p>
         </div>
       </div>
-      <canvas id="combo-chart" class="chart-canvas"></canvas>
-      <div class="chart-legend">
-        <div class="legend-item">
-          <div style="width:18px;height:2px;background:#6366f1;border-radius:1px"></div>잔류 농도 (mg)
+      <button class="btn btn-primary" style="margin-top:12px" onclick="logExerciseToday()">오늘 운동 완료 ✓</button>
+    </div>
+
+    <!-- 식단 분석 -->
+    <div class="card" id="diet-analysis-card">
+      <div class="card-title">식단 분석</div>
+      <div id="diet-analysis-content">
+        <div class="empty-state" style="padding:20px">
+          <div class="empty-icon">🥗</div>
+          <p>주사 기록을 추가하면 식단 가이드가 표시됩니다</p>
         </div>
-        <div class="legend-item">
-          <div style="width:10px;height:10px;border-radius:50%;background:#10b981;flex-shrink:0"></div>체중 (kg)
-        </div>
-        <div class="legend-item">
-          <div style="width:16px;height:8px;background:rgba(16,185,129,0.18);border-radius:2px"></div>치료 범위
-        </div>
-        <div class="legend-item">
-          <div style="width:2px;height:13px;background:rgba(99,102,241,0.35)"></div>주사일
-        </div>
-        <div class="legend-item">
-          <div style="width:2px;height:13px;background:rgba(239,68,68,0.5)"></div>오늘
-        </div>
-      </div>
-      <div style="text-align:center;margin-top:6px;font-size:10px;color:var(--gray-400)">
-        드래그로 이동 &nbsp;·&nbsp; 스크롤 또는 핀치로 확대/축소
       </div>
     </div>
+
   </div>
 
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- 투여 최적화 지표 안내 시트 -->
+<div class="sheet-overlay" id="info-sheet-overlay" onclick="closeInfoSheet(event)">
+  <div class="bottom-sheet" id="info-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">투여 최적화 지표란?</div>
+    <div class="sheet-metric-row">
+      <div class="metric-dot" style="background:#10b981"></div>
+      <div>
+        <div class="sheet-metric-name">복약 순응도 (Adherence)</div>
+        <div class="sheet-metric-desc">정해진 주사 주기를 얼마나 정확히 지켰는지를 나타냅니다. 계획된 날짜에 투여할수록 100%에 가까워지며, 이는 약물의 꾸준한 효과를 위한 기본 지표입니다.</div>
+      </div>
+    </div>
+    <div class="sheet-metric-row">
+      <div class="metric-dot" style="background:#6366f1"></div>
+      <div>
+        <div class="sheet-metric-name">농도 충분도 η (Concentration Adequacy)</div>
+        <div class="sheet-metric-desc">다음 투여 직전 예상 잔류 농도가 목표 골 농도(ssTrough) 대비 얼마나 되는지를 나타냅니다. η ≥ 0.85이면 체중 감소 효과를 유지하기에 충분한 약물 농도가 유지된 것입니다.</div>
+      </div>
+    </div>
+    <div class="sheet-footer">지표가 높을수록 체중 감량 효율이 높아집니다</div>
+  </div>
+</div>
 
 <script>
 // ─── State ────────────────────────────────────────────
@@ -789,6 +837,7 @@ let injections = DB.get('mj_injections');
 let weights    = DB.get('mj_weights');
 let sideEffects = DB.get('mj_se');
 let userProfile = DB.get('mj_profile', {});
+let exerciseLogs = DB.get('mj_exercise_logs', []);
 
 let selectedDose = null;
 let selectedSite = null;
@@ -802,11 +851,28 @@ function showTab(name) {
     b.classList.remove('active');
     if ((b.getAttribute('onclick') || '').includes(`'${name}'`)) b.classList.add('active');
   });
-  document.getElementById('tab-' + name).classList.add('active');
+  const tab = document.getElementById('tab-' + name);
+  if (tab) tab.classList.add('active');
   renderAll();
-  if (name === 'analysis') setTimeout(ccInit, 30);
-  if (name === 'exercise') setTimeout(renderExercisePage, 0);
   if (name === 'profile') setTimeout(initProfileForm, 0);
+}
+
+function showRecordSub(name) {
+  document.querySelectorAll('#tab-record .subtab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#tab-record .subsection').forEach(s => s.classList.remove('active'));
+  const btn = document.getElementById('srec-' + name);
+  const sec = document.getElementById('sub-' + name);
+  if (btn) btn.classList.add('active');
+  if (sec) sec.classList.add('active');
+}
+
+function showHistSub(name) {
+  document.querySelectorAll('#tab-analysis .subtab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#tab-analysis .subsection').forEach(s => s.classList.remove('active'));
+  const btn = document.getElementById('shist-' + name);
+  const sec = document.getElementById('hist-' + name);
+  if (btn) btn.classList.add('active');
+  if (sec) sec.classList.add('active');
 }
 
 // ─── Init date inputs ─────────────────────────────────
@@ -1533,20 +1599,7 @@ function renderDrugLevel() {
       </div>
     </div>
 
-    <div class="pk-note" style="margin-top:10px">
-      ⚠️ 1구획 1차 흡수 모델(Tmax≈48h, t½=5일) 기반 추정값으로, 개인차로 실제 농도와 다를 수 있습니다. 의학적 판단에 사용하지 마세요.
-    </div>
-    ${(() => {
-      const ex = calcExerciseRecommendation();
-      if (!ex) return '';
-      return `<div class="divider"></div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <div style="font-size:13px;font-weight:600;color:var(--gray-700)">운동 권장 구간</div>
-        <span style="background:${ex.bg};color:${ex.color};font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px">${ex.icon} ${ex.label}</span>
-      </div>
-      <div style="font-size:12px;color:var(--gray-500);margin-bottom:8px">전략: ${ex.strategy}</div>
-      <button onclick="showTab('exercise')" style="width:100%;padding:9px;border:1.5px solid ${ex.color};border-radius:8px;background:${ex.bg};color:${ex.color};font-size:13px;font-weight:600;cursor:pointer">운동 플랜 자세히 보기 →</button>`;
-    })()}`;
+    <div style="margin-top:8px;font-size:10px;color:var(--gray-400)">⚠️ 참고용 추정값 · 의학적 판단 불가</div>`;
 
   // Populate home chart card separately to avoid SVG overflow overlap
   const chartCard = document.getElementById('home-chart-card');
@@ -1554,7 +1607,7 @@ function renderDrugLevel() {
     chartCard.style.display = '';
     chartCard.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <span style="font-size:11px;color:var(--gray-500)">농도 · 체중 통합 그래프</span>
+        <span style="font-size:13px;font-weight:600;color:var(--gray-700)">농도 · 체중 통합 그래프</span>
         <span style="font-size:10px;color:var(--gray-400)">드래그·스크롤로 탐색</span>
       </div>
       <canvas id="combo-chart-home" class="chart-canvas"></canvas>
@@ -1711,7 +1764,10 @@ function renderDoseOptimization() {
 
   card.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <div class="card-title" style="margin-bottom:0">투여 최적화 분석</div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <div class="card-title" style="margin-bottom:0">투여 최적화 분석</div>
+        <button class="info-btn" onclick="showInfoSheet()">?</button>
+      </div>
       <span style="font-size:10px;color:var(--gray-400)">알고리즘 기반</span>
     </div>
     <div style="background:${m.bg};border:1px solid ${m.border};border-radius:10px;padding:12px">
@@ -1874,24 +1930,43 @@ function renderExerciseCard() {
   card.style.display = '';
 
   const levelLabel = { beginner: '입문', intermediate: '중급', advanced: '상급' };
+  const profLv = userProfile.level ? ` · ${levelLabel[userProfile.level]}` : '';
 
   card.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
       <div class="card-title" style="margin-bottom:0">오늘의 운동 추천</div>
-      <span style="background:${r.bg};color:${r.color};font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px">${r.icon} ${r.label}</span>
+      <span class="zone-pill ${r.zone}">${r.icon} ${r.label}</span>
     </div>
     ${r.intensityModifier ? `<div class="se-modifier">${r.intensityModifier}</div>` : ''}
-    <div style="font-size:13px;color:var(--gray-700);margin-bottom:5px"><strong>유산소:</strong> ${r.cardio}</div>
-    <div style="font-size:13px;color:var(--gray-700);margin-bottom:10px"><strong>근력:</strong> ${r.strength}</div>
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <span style="font-size:11px;color:var(--gray-500)">빈도: ${r.frequency}${userProfile.level ? ' · ' + levelLabel[userProfile.level] : ''}</span>
-      <button onclick="showTab('exercise')" style="background:none;border:1px solid ${r.color};border-radius:6px;color:${r.color};font-size:11px;font-weight:600;cursor:pointer;padding:4px 10px">자세히 →</button>
-    </div>`;
+
+    <div class="ex-item-label">유산소</div>
+    <div class="ex-item" style="margin-bottom:8px">
+      <div class="ex-item-icon">🏃</div>
+      <div class="ex-item-body">${r.cardio}</div>
+    </div>
+
+    <div class="ex-item-label">근력</div>
+    <div class="ex-item" style="margin-bottom:8px">
+      <div class="ex-item-icon">💪</div>
+      <div class="ex-item-body">${r.strength}</div>
+    </div>
+
+    <div class="ex-item-label" style="color:#dc2626">주의</div>
+    <div class="ex-item ex-avoid" style="margin-bottom:10px">
+      <div class="ex-item-icon">⛔</div>
+      <div class="ex-item-body">${r.avoid}</div>
+    </div>
+
+    <div style="padding:10px 12px;background:${r.bg};border-radius:8px;border-left:3px solid ${r.color}">
+      <div style="font-size:11px;font-weight:600;color:${r.color};margin-bottom:3px">💡 ${r.strategy}</div>
+      <div style="font-size:12px;color:var(--gray-700);line-height:1.5">${r.tip}</div>
+    </div>
+    <div style="margin-top:8px;font-size:11px;color:var(--gray-500);text-align:right">빈도: ${r.frequency}${profLv}</div>`;
 }
 
 function renderExercisePage() {
   const container = document.getElementById('exercise-page-content');
-  if (!container) return;
+  if (!container) return; // tab removed — exercise content lives in home card
 
   const r = calcExerciseRecommendation();
   if (!r) {
@@ -1971,6 +2046,187 @@ function renderExercisePage() {
     </div>`;
 }
 
+// ─── Info sheet ───────────────────────────────────────
+function showInfoSheet() {
+  document.getElementById('info-sheet-overlay').classList.add('open');
+}
+function closeInfoSheet(e) {
+  if (e && e.target !== document.getElementById('info-sheet-overlay')) return;
+  document.getElementById('info-sheet-overlay').classList.remove('open');
+}
+
+// ─── Exercise logging ─────────────────────────────────
+function logExerciseToday() {
+  const today = todayStr();
+  if (exerciseLogs.find(e => e.date === today)) {
+    showToast('오늘은 이미 운동이 기록되었습니다');
+    return;
+  }
+  exerciseLogs.push({ date: today, id: Date.now() });
+  exerciseLogs.sort((a, b) => a.date.localeCompare(b.date));
+  DB.set('mj_exercise_logs', exerciseLogs);
+  showToast('오늘 운동이 기록되었습니다 💪');
+  renderAll();
+}
+
+function getWeeklyExerciseCount() {
+  const now = new Date();
+  const dow = now.getDay();
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1));
+  monday.setHours(0, 0, 0, 0);
+  return exerciseLogs.filter(e => new Date(e.date + 'T00:00:00') >= monday).length;
+}
+
+// ─── Timeline ─────────────────────────────────────────
+function renderTimeline() {
+  const el = document.getElementById('unified-timeline');
+  if (!el) return;
+
+  const items = [];
+  injections.forEach(i  => items.push({ type: 'inj', date: i.date,  data: i  }));
+  weights.forEach(w     => items.push({ type: 'wt',  date: w.date,  data: w  }));
+  sideEffects.forEach(s => items.push({ type: 'se',  date: s.date,  data: s  }));
+  exerciseLogs.forEach(x => items.push({ type: 'ex', date: x.date,  data: x  }));
+  items.sort((a, b) => b.date.localeCompare(a.date));
+
+  if (items.length === 0) {
+    el.innerHTML = `<div class="empty-state" style="padding:20px"><div class="empty-icon">📋</div><p>기록이 없습니다</p></div>`;
+    return;
+  }
+
+  const sevLabel = { 1: '가벼움', 2: '중간', 3: '심함' };
+  el.innerHTML = `<div class="timeline">${items.slice(0, 40).map(item => {
+    let icon, main, sub = '';
+    if (item.type === 'inj') {
+      icon = '💉'; main = `${item.data.dose}mg · ${item.data.site}`;
+      sub = item.data.memo || '';
+    } else if (item.type === 'wt') {
+      icon = '⚖️'; main = `${item.data.value} kg`;
+      sub = item.data.memo || '';
+    } else if (item.type === 'se') {
+      icon = '⚠️'; main = item.data.symptoms.join(', ');
+      sub = sevLabel[item.data.severity] + (item.data.memo ? ' · ' + item.data.memo : '');
+    } else {
+      icon = '🏋️'; main = '운동 완료'; sub = '';
+    }
+    return `<div class="timeline-item">
+      <div class="timeline-icon ${item.type}">${icon}</div>
+      <div class="timeline-body">
+        <div class="timeline-date">${fmt(item.date)}</div>
+        <div class="timeline-main">${main}</div>
+        ${sub ? `<div class="timeline-sub">${sub}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+// ─── Weekly exercise goal ──────────────────────────────
+function renderWeeklyExerciseGoal() {
+  const el = document.getElementById('exercise-goal-content');
+  if (!el) return;
+
+  const count = getWeeklyExerciseCount();
+  const goal = 4;
+  const pct = Math.min(count / goal, 1);
+  const r = 38, cx = 50, cy = 50;
+  const circumference = 2 * Math.PI * r;
+  const dashOffset = circumference * (1 - pct);
+  const color = count >= goal ? '#10b981' : count >= 2 ? '#4f46e5' : '#f59e0b';
+
+  el.innerHTML = `
+    <div class="goal-ring-wrap">
+      <svg width="100" height="100" viewBox="0 0 100 100">
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#e5e7eb" stroke-width="10"/>
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="10"
+          stroke-dasharray="${circumference.toFixed(2)}" stroke-dashoffset="${dashOffset.toFixed(2)}"
+          stroke-linecap="round" transform="rotate(-90 ${cx} ${cy})"
+          style="transition:stroke-dashoffset 0.5s ease"/>
+        <text x="${cx}" y="${cy - 5}" text-anchor="middle" font-size="22" font-weight="700" fill="${color}">${count}</text>
+        <text x="${cx}" y="${cy + 13}" text-anchor="middle" font-size="11" fill="#9ca3af">/ ${goal}회</text>
+      </svg>
+      <div class="goal-ring-label">이번 주 운동 횟수</div>
+    </div>
+    <div style="text-align:center;font-size:12px;padding:4px 0 2px;${count >= goal ? 'color:#10b981;font-weight:600' : 'color:var(--gray-500)'}">
+      ${count >= goal ? '🎉 이번 주 목표 달성!' : `목표까지 ${goal - count}회 남았습니다`}
+    </div>`;
+}
+
+// ─── Diet analysis ────────────────────────────────────
+function renderDietAnalysis() {
+  const el = document.getElementById('diet-analysis-content');
+  if (!el) return;
+
+  if (injections.length === 0) {
+    el.innerHTML = `<div class="empty-state" style="padding:20px"><div class="empty-icon">🥗</div><p>주사 기록을 추가하면 식단 가이드가 표시됩니다</p></div>`;
+    return;
+  }
+
+  const zoneInfo = calcConcentrationZone();
+  if (!zoneInfo) {
+    el.innerHTML = `<div class="empty-state" style="padding:20px"><div class="empty-icon">🥗</div><p>주사 기록을 추가하면 식단 가이드가 표시됩니다</p></div>`;
+    return;
+  }
+
+  const dietGuide = {
+    peak: {
+      title: '고농도 구간 식단 전략', color: '#dc2626', bg: '#fee2e2',
+      tips: [
+        { icon: '🥩', text: '단백질 우선 섭취: 체중 1kg당 1.6g 이상을 목표로 근손실을 방지하세요.' },
+        { icon: '🥦', text: '소화 부담 적은 채소와 저지방 단백질(닭가슴살, 두부, 계란)을 중심으로 구성하세요.' },
+        { icon: '⚡', text: '식욕 저하 시에도 단백질 쉐이크 등으로 단백질 목표를 채우세요.' },
+      ],
+      note: '이 구간은 오심이 올 수 있습니다. 소량씩 자주 드세요.',
+    },
+    mid: {
+      title: '중간 농도 구간 식단 전략', color: '#059669', bg: '#d1fae5',
+      tips: [
+        { icon: '🥗', text: '영양 밀도 높은 식단: 채소, 통곡물, 저지방 단백질 조합이 이상적입니다.' },
+        { icon: '🍎', text: '혈당 스파이크를 방지하는 저GI 식품을 선택하세요 (현미, 고구마, 사과 등).' },
+        { icon: '💧', text: '하루 1.5~2L 수분 섭취로 대사를 유지하세요.' },
+      ],
+      note: '지방 연소에 가장 효율적인 구간입니다. 과도한 칼로리 제한은 오히려 근손실을 유발합니다.',
+    },
+    low: {
+      title: '저농도 구간 식단 전략', color: '#d97706', bg: '#fef3c7',
+      tips: [
+        { icon: '🍽️', text: '식욕이 회복되는 구간입니다. 식사 전 물 한 잔으로 과식을 방지하세요.' },
+        { icon: '🥜', text: '포만감 있는 고섬유질 식품(견과류, 콩류, 브로콜리)으로 과식 충동을 조절하세요.' },
+        { icon: '📝', text: '식단 일지를 꼼꼼히 기록하여 과식 패턴을 파악하세요.' },
+      ],
+      note: '식욕이 돌아오는 구간입니다. "보상 심리"로 인한 과식을 경계하세요.',
+    },
+  };
+
+  const g = dietGuide[zoneInfo.zone];
+
+  let speedHtml = '';
+  if (weights.length >= 2) {
+    const r = calcDoseOptimization();
+    if (r && r.weightSlope !== null) {
+      const weekly = r.weightSlope * 7;
+      const speedColor = weekly <= -0.3 ? '#10b981' : weekly <= 0 ? '#f59e0b' : '#ef4444';
+      speedHtml = `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--gray-50);border-radius:8px;margin-bottom:10px">
+          <div style="font-size:12px;color:var(--gray-500)">최근 체중 감소 속도</div>
+          <div style="font-size:14px;font-weight:700;color:${speedColor}">${weekly <= 0 ? '▼' : '▲'} ${Math.abs(weekly).toFixed(2)} kg/주</div>
+        </div>`;
+    }
+  }
+
+  el.innerHTML = `${speedHtml}
+    <div style="padding:12px;background:${g.bg};border-radius:8px;margin-bottom:10px">
+      <div style="font-size:12px;font-weight:700;color:${g.color};margin-bottom:10px">${g.title}</div>
+      ${g.tips.map(t => `<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px">
+        <span style="font-size:16px;flex-shrink:0">${t.icon}</span>
+        <div style="font-size:12px;color:var(--gray-700);line-height:1.5">${t.text}</div>
+      </div>`).join('')}
+    </div>
+    <div style="padding:8px 10px;background:white;border:1px solid ${g.color}44;border-radius:8px;font-size:11px;color:var(--gray-500);line-height:1.5">
+      💡 ${g.note}
+    </div>`;
+}
+
 // ─── Render functions ─────────────────────────────────
 function renderAll() {
   renderHome();
@@ -1978,10 +2234,9 @@ function renderAll() {
   renderDrugLevel();
   renderDoseOptimization();
   renderExerciseCard();
-  renderWeightChart();
-  renderWeightList();
-  renderSEList();
-  renderInjList();
+  renderTimeline();
+  renderWeeklyExerciseGoal();
+  renderDietAnalysis();
 }
 
 function fmt(dateStr) {
@@ -2027,47 +2282,59 @@ function renderHome() {
     else { el.textContent = '0'; }
   }
 
-  // Weight summary
+  // Weight summary with 4-week avg
   const ws = document.getElementById('weight-summary');
   if (weights.length > 0) {
     const first = weights[0], latest = weights[weights.length - 1];
-    const diff = (latest.value - first.value).toFixed(1);
-    const cls = parseFloat(diff) < 0 ? 'loss' : parseFloat(diff) > 0 ? 'gain' : 'same';
-    const arrow = parseFloat(diff) < 0 ? '▼' : parseFloat(diff) > 0 ? '▲' : '━';
+    const totalDiff = (latest.value - first.value);
+    const totalCls = totalDiff < 0 ? 'loss' : totalDiff > 0 ? 'gain' : 'same';
+    const totalArrow = totalDiff < 0 ? '▼' : totalDiff > 0 ? '▲' : '━';
+
+    // 4-week average weekly loss
+    const nowMs = Date.now();
+    const w28 = nowMs - 28 * 86400000;
+    const wBefore = weights.filter(w => new Date(w.date + 'T12:00:00').getTime() < w28);
+    const wAfter  = weights.filter(w => new Date(w.date + 'T12:00:00').getTime() >= w28);
+    let avgHtml = '';
+    if (wBefore.length > 0 && wAfter.length > 0) {
+      const lossKg = wBefore[wBefore.length - 1].value - wAfter[wAfter.length - 1].value;
+      const weeklyLoss = lossKg / 4;
+      const avgColor = weeklyLoss > 0 ? 'var(--success)' : weeklyLoss < 0 ? 'var(--danger)' : 'var(--gray-500)';
+      avgHtml = `
+        <div class="divider"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-size:12px;color:var(--gray-500)">4주 평균 주당 감소</div>
+          <div style="font-size:20px;font-weight:700;color:${avgColor}">${weeklyLoss > 0 ? '▼' : weeklyLoss < 0 ? '▲' : '━'} ${Math.abs(weeklyLoss).toFixed(2)} <span style="font-size:12px;font-weight:400">kg/주</span></div>
+        </div>`;
+    } else if (weights.length >= 2) {
+      const days = Math.max(1, (new Date(latest.date + 'T12:00:00') - new Date(first.date + 'T12:00:00')) / 86400000);
+      const weeklyLoss = (first.value - latest.value) / days * 7;
+      const avgColor = weeklyLoss > 0 ? 'var(--success)' : weeklyLoss < 0 ? 'var(--danger)' : 'var(--gray-500)';
+      avgHtml = `
+        <div class="divider"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-size:12px;color:var(--gray-500)">전체 평균 주당 감소</div>
+          <div style="font-size:20px;font-weight:700;color:${avgColor}">${weeklyLoss > 0 ? '▼' : weeklyLoss < 0 ? '▲' : '━'} ${Math.abs(weeklyLoss).toFixed(2)} <span style="font-size:12px;font-weight:400">kg/주</span></div>
+        </div>`;
+    }
+
     ws.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div>
-          <div style="font-size:13px;color:var(--gray-500)">시작 체중</div>
-          <div style="font-size:18px;font-weight:700">${first.value} kg</div>
+          <div style="font-size:11px;color:var(--gray-500)">시작</div>
+          <div style="font-size:20px;font-weight:700">${first.value}<span style="font-size:12px;font-weight:400"> kg</span></div>
         </div>
-        <div style="font-size:22px;color:var(--gray-300)">→</div>
+        <div style="text-align:center">
+          <span class="change-chip ${totalCls}" style="font-size:14px;padding:5px 14px">${totalArrow} ${Math.abs(totalDiff).toFixed(1)} kg</span>
+        </div>
         <div style="text-align:right">
-          <div style="font-size:13px;color:var(--gray-500)">현재 체중</div>
-          <div style="font-size:18px;font-weight:700">${latest.value} kg</div>
+          <div style="font-size:11px;color:var(--gray-500)">현재</div>
+          <div style="font-size:20px;font-weight:700">${latest.value}<span style="font-size:12px;font-weight:400"> kg</span></div>
         </div>
       </div>
-      <div class="divider"></div>
-      <div class="weight-change">
-        <span class="change-chip ${cls}">${arrow} ${Math.abs(diff)} kg</span>
-        <span style="font-size:12px;color:var(--gray-500)">${first.date} ~ ${latest.date}</span>
-      </div>`;
+      ${avgHtml}`;
   } else {
     ws.innerHTML = `<div class="empty-state" style="padding:20px"><div class="empty-icon">⚖️</div><p>체중 기록이 없습니다</p></div>`;
-  }
-
-  // Recent injections
-  const ri = document.getElementById('recent-injections');
-  if (injections.length === 0) {
-    ri.innerHTML = `<div class="empty-state" style="padding:20px"><div class="empty-icon">💉</div><p>주사 기록이 없습니다</p></div>`;
-  } else {
-    ri.innerHTML = [...injections].reverse().slice(0, 3).map(i => `
-      <div class="log-item">
-        <div>
-          <div class="log-date">${fmt(i.date)}</div>
-          <div class="log-main">${i.dose}mg <span class="dose-badge">${i.dose}mg</span></div>
-          <div class="log-sub">${i.site}${i.memo ? ' · ' + i.memo : ''}</div>
-        </div>
-      </div>`).join('');
   }
 }
 
@@ -2203,8 +2470,8 @@ function exportData() {
 
 function resetData() {
   if (!confirm('모든 기록을 삭제하겠습니까?\n이 작업은 되돌릴 수 없습니다.')) return;
-  injections = []; weights = []; sideEffects = [];
-  ['mj_injections', 'mj_weights', 'mj_se'].forEach(k => localStorage.removeItem(k));
+  injections = []; weights = []; sideEffects = []; exerciseLogs = [];
+  ['mj_injections', 'mj_weights', 'mj_se', 'mj_exercise_logs'].forEach(k => localStorage.removeItem(k));
   showToast('모든 데이터가 초기화되었습니다');
   renderAll();
 }
