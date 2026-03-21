@@ -45,6 +45,7 @@
     background: white;
     border-bottom: 1px solid var(--gray-200);
     padding: 16px 20px;
+    padding-top: max(16px, calc(env(safe-area-inset-top) + 8px));
     position: sticky;
     top: 0;
     z-index: 100;
@@ -712,8 +713,12 @@
     <div class="card" style="border:1px solid var(--danger-light);margin-top:4px">
       <div class="card-title" style="color:var(--danger)">데이터 관리</div>
       <p style="font-size:13px;color:var(--gray-500);margin-bottom:12px">모든 데이터를 내보내거나 초기화할 수 있습니다.</p>
-      <div style="display:flex;gap:8px">
+      <div style="display:flex;gap:8px;margin-bottom:8px">
         <button class="btn" style="flex:1;background:var(--success-light);color:var(--success);justify-content:center" onclick="exportData()">내보내기 (JSON)</button>
+        <button class="btn" style="flex:1;background:var(--primary-light);color:var(--primary);justify-content:center" onclick="document.getElementById('import-file-input').click()">가져오기 (JSON)</button>
+      </div>
+      <input type="file" id="import-file-input" accept=".json,application/json" style="display:none" onchange="importData(this)">
+      <div style="display:flex;gap:8px">
         <button class="btn" style="flex:1;background:var(--danger-light);color:var(--danger);justify-content:center" onclick="resetData()">전체 초기화</button>
       </div>
     </div>
@@ -2496,6 +2501,37 @@ function exportData() {
   a.click();
 }
 
+function importData(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.injections || !data.weights) {
+        showToast('올바른 백업 파일이 아닙니다');
+        return;
+      }
+      if (!confirm(`데이터를 가져오면 현재 기록이 덮어씌워집니다.\n투여 ${data.injections.length}건 / 체중 ${data.weights.length}건\n계속하시겠습니까?`)) return;
+      injections   = data.injections   || [];
+      weights      = data.weights      || [];
+      sideEffects  = data.sideEffects  || [];
+      exerciseLogs = data.exerciseLogs || [];
+      DB.set('mj_injections', injections);
+      DB.set('mj_weights', weights);
+      DB.set('mj_se', sideEffects);
+      DB.set('mj_exercise_logs', exerciseLogs);
+      showToast('데이터를 성공적으로 가져왔습니다');
+      renderAll();
+    } catch {
+      showToast('파일을 읽는 중 오류가 발생했습니다');
+    } finally {
+      input.value = '';
+    }
+  };
+  reader.readAsText(file);
+}
+
 function resetData() {
   if (!confirm('모든 기록을 삭제하겠습니까?\n이 작업은 되돌릴 수 없습니다.')) return;
   injections = []; weights = []; sideEffects = []; exerciseLogs = [];
@@ -2516,6 +2552,41 @@ function showToast(msg) {
 initDates();
 initProfileForm();
 renderAll();
+
+// ─── Generate app icon via Canvas ─────────────────────
+(function() {
+  try {
+    const c = document.createElement('canvas');
+    c.width = c.height = 180;
+    const ctx = c.getContext('2d');
+    // Purple rounded background
+    ctx.fillStyle = '#6366f1';
+    ctx.beginPath();
+    const r = 38, w = 180;
+    ctx.moveTo(r,0); ctx.lineTo(w-r,0); ctx.arcTo(w,0,w,r,r);
+    ctx.lineTo(w,w-r); ctx.arcTo(w,w,w-r,w,r);
+    ctx.lineTo(r,w); ctx.arcTo(0,w,0,w-r,r);
+    ctx.lineTo(0,r); ctx.arcTo(0,0,r,0,r);
+    ctx.closePath();
+    ctx.fill();
+    // Syringe icon scaled 6x, centered
+    const sc = 6, ox = (180 - 24*sc)/2, oy = (180 - 24*sc)/2;
+    ctx.save();
+    ctx.translate(ox, oy);
+    ctx.scale(sc, sc);
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 0.5;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.stroke(new Path2D('M14.5 7.5a2 2 0 0 0-2.83 0L3 16.17a2 2 0 0 0 0 2.83l2.83 2.83a2 2 0 0 0 2.83 0L17.5 13a2 2 0 0 0 0-2.83L14.5 7.5z'));
+    [[10,11,13,14],[12,9,15,12],[3,21,6,18],[18,3,21,6],[17,4,20,7]].forEach(([x1,y1,x2,y2]) => {
+      ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    });
+    ctx.restore();
+    const link = document.querySelector('link[rel="apple-touch-icon"]');
+    if (link) link.href = c.toDataURL('image/png');
+  } catch(e) {}
+})();
 </script>
 </body>
 </html>
