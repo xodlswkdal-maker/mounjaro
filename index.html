@@ -2,8 +2,13 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Mounjaro Tracker</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mounjaro">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='38' fill='%236366f1'/%3E%3Cg transform='translate(18%2C18) scale(6)' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14.5 7.5a2 2 0 0 0-2.83 0L3 16.17a2 2 0 0 0 0 2.83l2.83 2.83a2 2 0 0 0 2.83 0L17.5 13a2 2 0 0 0 0-2.83L14.5 7.5z'/%3E%3Cline x1='10' y1='11' x2='13' y2='14'/%3E%3Cline x1='12' y1='9' x2='15' y2='12'/%3E%3Cline x1='3' y1='21' x2='6' y2='18'/%3E%3Cline x1='18' y1='3' x2='21' y2='6'/%3E%3Cline x1='17' y1='4' x2='20' y2='7'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="manifest" href="data:application/json,%7B%22name%22%3A%22Mounjaro+Tracker%22%2C%22short_name%22%3A%22Mounjaro%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f3f4f6%22%2C%22theme_color%22%3A%22%236366f1%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%2520xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%2520viewBox%3D'0%25200%2520180%2520180'%253E%253Crect%2520width%3D'180'%2520height%3D'180'%2520rx%3D'38'%2520fill%3D'%25236366f1'%2F%253E%253C%2Fsvg%253E%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -1633,45 +1638,57 @@ function renderDrugLevel() {
       const targetW = userProfile.targetWeight;
       const startW  = weights.length > 0 ? weights[0].value : null;
       const curW    = weights.length > 0 ? weights[weights.length - 1].value : null;
-      let weightBarHtml;
+
+      // 체중 값
+      let wVal = '', wDelta = '', wDeltaCol = 'var(--gray-500)';
+      if (curW !== null && startW !== null) {
+        const diff = curW - startW;
+        const arrow = diff < 0 ? '▼' : diff > 0 ? '▲' : '━';
+        wDeltaCol = diff < 0 ? 'var(--success)' : diff > 0 ? 'var(--danger)' : 'var(--gray-500)';
+        wVal = `<span style="font-size:17px;font-weight:800;color:#111827">${curW}</span><span style="font-size:10px;color:var(--gray-500)">kg</span>`;
+        wDelta = `<span style="font-size:12px;font-weight:700;color:${wDeltaCol}">${arrow}${Math.abs(diff).toFixed(1)}</span>`;
+      } else {
+        wVal = `<span style="font-size:12px;color:var(--gray-400)">기록 없음</span>`;
+      }
+
+      // 체중 바
+      let wBarHtml;
       if (targetW && startW && curW && startW > targetW) {
-        const totalLoss = startW - targetW;
-        const achieved  = Math.min(Math.max(startW - curW, 0), totalLoss);
-        const wpct      = achieved / totalLoss;
-        weightBarHtml = `<div style="flex:1;min-width:0">
+        const wpct = Math.min(Math.max(startW - curW, 0), startW - targetW) / (startW - targetW);
+        wBarHtml = `
           <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--gray-400);margin-bottom:2px">
             <span>${startW}kg</span><span>목표 ${targetW}kg</span>
           </div>
           <div style="position:relative;height:6px;border-radius:3px;background:linear-gradient(to right,#e5e7eb,#6366f1);overflow:hidden">
             <div style="position:absolute;top:0;right:0;height:100%;width:${((1-wpct)*100).toFixed(1)}%;background:#e5e7eb;transition:width 0.4s"></div>
-          </div>
-        </div>`;
+          </div>`;
       } else {
-        weightBarHtml = `<div style="flex:1;min-width:0;font-size:10px;color:var(--gray-400);text-align:right;padding-top:2px">목표 체중 미설정</div>`;
+        wBarHtml = `<div style="font-size:9px;color:var(--gray-400);margin-bottom:2px">목표 체중 미설정</div>
+          <div style="height:6px;border-radius:3px;background:#e5e7eb"></div>`;
       }
-      return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:5px">
-        <div style="white-space:nowrap">
-          <span style="font-size:11px;color:var(--gray-500)">체중&nbsp;</span>${weightInline}
+
+      return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;margin-bottom:6px">
+        <div>
+          <div style="font-size:10px;color:var(--gray-500);margin-bottom:2px">체중</div>
+          <div style="white-space:nowrap">${wVal}&nbsp;${wDelta}</div>
         </div>
-        ${weightBarHtml}
+        <div>
+          <div style="font-size:10px;color:var(--gray-500);margin-bottom:2px">잔류</div>
+          <div style="white-space:nowrap">
+            <span style="font-size:17px;font-weight:800;color:#111827">${currentLevel.toFixed(2)}</span>
+            <span style="font-size:10px;color:var(--gray-500)">mg</span>
+            <span style="font-size:12px;font-weight:700;color:${color};margin-left:3px">${(pct*100).toFixed(0)}%</span>
+          </div>
+        </div>
+        <div style="margin-top:4px">${wBarHtml}</div>
+        <div style="margin-top:4px">
+          <div style="height:6px;border-radius:3px;background:#e5e7eb;overflow:hidden;margin-top:16px">
+            <div style="height:100%;width:${(pct*100).toFixed(1)}%;background:${color};border-radius:3px;transition:width 0.4s"></div>
+          </div>
+          <div style="text-align:right;font-size:9px;color:${color};margin-top:1px">${label}</div>
+        </div>
       </div>`;
     })()}
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-      <div style="white-space:nowrap">
-        <span style="font-size:11px;color:var(--gray-500)">잔류&nbsp;</span>
-        <span style="font-size:14px;font-weight:700;color:#111827">${currentLevel.toFixed(2)}</span>
-        <span style="font-size:10px;color:var(--gray-500)">mg</span>
-        <span style="font-size:11px;font-weight:700;color:${color};margin-left:4px">${(pct * 100).toFixed(0)}%</span>
-      </div>
-      <div style="flex:1;min-width:0">
-        <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--gray-400);margin-bottom:2px">
-          <span>0</span><span>${label}</span>
-        </div>
-        <div style="height:6px;border-radius:3px;background:#e5e7eb;overflow:hidden">
-          <div style="height:100%;width:${(pct * 100).toFixed(1)}%;background:${color};border-radius:3px;transition:width 0.4s"></div>
-        </div>
-      </div>
-    </div>
     <div style="font-size:9px;color:var(--gray-400)">⚠️ 참고용 추정값 · 의학적 판단 불가</div>`;
 
   setTimeout(ccHomeInit, 30);
@@ -1824,7 +1841,7 @@ function renderDoseOptimization() {
       <span style="font-size:9px;color:var(--gray-400)">알고리즘 기반</span>
     </div>
     <div style="display:flex;gap:6px;align-items:stretch">
-      <div style="flex:1;background:${m.bg};border:1px solid ${m.border};border-radius:8px;padding:8px">
+      <div style="flex:1;background:${m.bg};border:1px solid ${m.border};border-radius:8px;padding:12px 10px">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
           <span style="font-size:15px">${m.icon}</span>
           <span style="font-size:12px;font-weight:700;color:${m.color}">${r.recommendation}</span>
