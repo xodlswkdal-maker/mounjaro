@@ -114,7 +114,7 @@
     background: linear-gradient(135deg, var(--primary), #7c3aed);
     color: white;
     border-radius: var(--radius);
-    padding: 20px;
+    padding: 12px 16px;
     margin-bottom: 12px;
     position: relative;
     overflow: hidden;
@@ -127,17 +127,17 @@
     border-radius: 50%;
     background: rgba(255,255,255,0.1);
   }
-  .next-dose-label { font-size: 12px; opacity: 0.85; margin-bottom: 4px; }
-  .next-dose-date { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
-  .next-dose-sub { font-size: 13px; opacity: 0.85; }
+  .next-dose-label { font-size: 11px; opacity: 0.85; margin-bottom: 2px; }
+  .next-dose-date { font-size: 19px; font-weight: 700; margin-bottom: 2px; }
+  .next-dose-sub { font-size: 12px; opacity: 0.85; }
   .days-badge {
     display: inline-block;
     background: rgba(255,255,255,0.25);
     border-radius: 20px;
-    padding: 4px 12px;
-    font-size: 13px;
+    padding: 3px 10px;
+    font-size: 12px;
     font-weight: 600;
-    margin-top: 10px;
+    margin-top: 7px;
   }
 
   /* Stats Row */
@@ -345,14 +345,14 @@
 
   /* Drug level gauge */
   .gauge-wrap { text-align: center; margin-bottom: 4px; }
-  .level-meta-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin: 4px 0 14px; }
+  .level-meta-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; margin: 4px 0 8px; }
   .level-meta-cell {
-    text-align: center; padding: 9px 6px;
+    text-align: center; padding: 5px 6px;
     background: var(--gray-50); border-radius: 8px;
   }
-  .level-meta-label { font-size: 10px; color: var(--gray-500); margin-bottom: 2px; }
-  .level-meta-val { font-size: 15px; font-weight: 700; color: var(--gray-900); }
-  .level-meta-unit { font-size: 10px; font-weight: 400; color: var(--gray-500); }
+  .level-meta-label { font-size: 9px; color: var(--gray-500); margin-bottom: 1px; }
+  .level-meta-val { font-size: 13px; font-weight: 700; color: var(--gray-900); }
+  .level-meta-unit { font-size: 9px; font-weight: 400; color: var(--gray-500); }
   .pk-note {
     margin-top: 10px; padding: 8px 10px;
     background: #fef3c7; border-radius: 8px;
@@ -548,56 +548,35 @@
   <!-- HOME TAB -->
   <div class="section active" id="tab-home">
 
-    <div id="next-dose-banner" class="next-dose-banner">
-      <div class="next-dose-label">다음 주사 예정일</div>
-      <div class="next-dose-date" id="next-date">-</div>
-      <div class="next-dose-sub" id="next-dose-info">아직 주사 기록이 없습니다</div>
-      <div class="days-badge" id="days-left">기록을 추가해주세요</div>
+    <!-- 통합 카드: 농도·체중 그래프 + 잔류 농도 + 체중 변화 -->
+    <div class="card" id="home-chart-card" style="padding:14px;min-height:50vh">
+      <div style="text-align:center;padding:20px 0;color:var(--gray-500);font-size:13px">
+        <div style="font-size:32px;margin-bottom:8px">🧪</div>
+        주사 기록을 추가하면 통합 정보가 표시됩니다
+      </div>
     </div>
 
-    <div class="stats-row">
-      <div class="stat-card">
-        <div class="stat-val" id="stat-weeks">0</div>
-        <div class="stat-lbl">총 주사 횟수</div>
+    <!-- Algorithm C: Dose Optimization Card -->
+    <div class="card" id="dose-opt-card" style="display:none;padding:10px 14px;margin-bottom:8px"></div>
+
+    <div id="next-dose-banner" class="next-dose-banner">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div class="next-dose-label">다음 주사 예정일</div>
+          <div class="next-dose-date" id="next-date">-</div>
+          <div class="next-dose-sub" id="next-dose-info">아직 주사 기록이 없습니다</div>
+        </div>
+        <div style="text-align:right;opacity:0.92;flex-shrink:0;margin-left:8px">
+          <div style="font-size:9px;opacity:0.8;letter-spacing:0.03em">총 투여</div>
+          <div id="stat-weeks" style="font-size:24px;font-weight:800;line-height:1">0</div>
+          <div style="font-size:9px;opacity:0.8">회</div>
+        </div>
       </div>
-      <div class="stat-card">
-        <div class="stat-val" id="stat-current-dose">-</div>
-        <div class="stat-lbl">현재 용량</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-val" id="stat-weight-loss">-</div>
-        <div class="stat-lbl">총 감량(kg)</div>
-      </div>
+      <div class="days-badge" id="days-left">기록을 추가해주세요</div>
     </div>
 
     <!-- Algorithm A: Food Noise Alert -->
     <div id="food-noise-alert"></div>
-
-    <!-- Drug Level Card -->
-    <div class="card" id="drug-level-card">
-      <div class="card-title">체내 잔류 농도</div>
-      <div class="empty-state" style="padding:20px">
-        <div class="empty-icon">🧪</div>
-        <p>주사 기록을 추가하면 잔류 농도가 표시됩니다</p>
-      </div>
-    </div>
-
-    <!-- Home Chart Card (농도·체중 통합 그래프) -->
-    <div class="card" id="home-chart-card" style="display:none;padding:14px"></div>
-
-    <!-- Algorithm C: Dose Optimization Card -->
-    <div class="card" id="dose-opt-card" style="display:none"></div>
-
-    <!-- Weight Summary -->
-    <div class="card" id="weight-summary-card">
-      <div class="card-title">체중 변화</div>
-      <div id="weight-summary">
-        <div class="empty-state" style="padding:20px">
-          <div class="empty-icon">⚖️</div>
-          <p>체중 기록이 없습니다</p>
-        </div>
-      </div>
-    </div>
 
   </div>
 
@@ -635,8 +614,6 @@
             <div class="site-opt" data-site="복부 우"  onclick="selectSite(this)">복부 우</div>
             <div class="site-opt" data-site="허벅지 좌" onclick="selectSite(this)">허벅지 좌</div>
             <div class="site-opt" data-site="허벅지 우" onclick="selectSite(this)">허벅지 우</div>
-            <div class="site-opt" data-site="상완 좌"  onclick="selectSite(this)">상완 좌</div>
-            <div class="site-opt" data-site="상완 우"  onclick="selectSite(this)">상완 우</div>
           </div>
         </div>
         <div class="form-group">
@@ -711,7 +688,13 @@
 
     <!-- 통합 타임라인 -->
     <div class="card" style="margin-top:4px">
-      <div class="card-title">전체 기록 타임라인</div>
+      <div class="card-title">기록 타임라인</div>
+      <div class="subtab-bar" id="timeline-tab-bar">
+        <button class="subtab-btn active" id="ttab-all" onclick="showTimelineTab('all')">전체</button>
+        <button class="subtab-btn" id="ttab-inj" onclick="showTimelineTab('inj')">💉 주사</button>
+        <button class="subtab-btn" id="ttab-wt" onclick="showTimelineTab('wt')">⚖️ 체중</button>
+        <button class="subtab-btn" id="ttab-se" onclick="showTimelineTab('se')">⚠️ 부작용</button>
+      </div>
       <div id="unified-timeline">
         <div class="empty-state" style="padding:20px">
           <div class="empty-icon">📋</div>
@@ -745,6 +728,10 @@
       <div class="form-group">
         <label>나이</label>
         <input type="number" id="prof-age" placeholder="예: 35" min="18" max="100">
+      </div>
+      <div class="form-group">
+        <label>목표 체중 (kg)</label>
+        <input type="number" id="prof-target-weight" placeholder="예: 65" min="30" max="200" step="0.1">
       </div>
       <div class="form-group">
         <label>성별</label>
@@ -843,6 +830,8 @@ let selectedDose = null;
 let selectedSite = null;
 let selectedSEList = [];
 let selectedSev = null;
+let timelineFilter = 'all';
+let timelineExpanded = false;
 
 // ─── Tab navigation ───────────────────────────────────
 function showTab(name) {
@@ -864,6 +853,19 @@ function showRecordSub(name) {
   const sec = document.getElementById('sub-' + name);
   if (btn) btn.classList.add('active');
   if (sec) sec.classList.add('active');
+}
+
+function showTimelineTab(name) {
+  timelineFilter = name;
+  timelineExpanded = false;
+  document.querySelectorAll('#timeline-tab-bar .subtab-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('ttab-' + name);
+  if (btn) btn.classList.add('active');
+  renderTimeline();
+}
+function showAllTimeline() {
+  timelineExpanded = true;
+  renderTimeline();
 }
 
 function showHistSub(name) {
@@ -1141,7 +1143,7 @@ function ccHomeInit() {
 
   const container = CC_HOME.el.parentElement;
   const cssW = Math.max(220, container.clientWidth || 340);
-  const cssH = Math.round(Math.min(240, Math.max(180, cssW * 0.52)));
+  const cssH = Math.round(Math.min(220, Math.max(160, cssW * 0.55)));
   CC_HOME.el.style.width  = cssW + 'px';
   CC_HOME.el.style.height = cssH + 'px';
   CC_HOME.el.width  = Math.round(cssW * CC_HOME.dpr);
@@ -1252,9 +1254,14 @@ function ccDraw(inst) {
     const ms = v0 + (i / steps) * range;
     drugPts.push({ x: pL + (i / steps) * plotW, v: calcDrugLevelAt(ms) });
   }
+  const wDecayCC = Math.pow(0.5, 7 / HALF_LIFE);
+  const ssPeakMax = injections.length > 0
+    ? Math.max(...injections.map(i => parseFloat(i.dose) / (1 - wDecayCC)))
+    : 0;
   const rawMaxDrug = Math.max(
     ...drugPts.map(p => p.v),
-    ...injections.map(i => parseFloat(i.dose)), 0.5
+    ssPeakMax,
+    0.5
   );
   const drugTicks  = niceTicks(0, rawMaxDrug * 1.2, 5);
   const maxDrugAxis = drugTicks[drugTicks.length - 1] || 1;
@@ -1397,6 +1404,29 @@ function ccDraw(inst) {
     }
   }
 
+  // ── Side Effects diamond markers on concentration curve ─
+  for (const se of sideEffects) {
+    const seMs = new Date(se.date + 'T12:00:00').getTime();
+    const x = xOf(seMs);
+    if (x < pL - 8 || x > pL + plotW + 8) continue;
+    const seLevel = calcDrugLevelAt(seMs);
+    const y = yDrug(seLevel);
+    if (y < pT - 4 || y > pT + plotH + 4) continue;
+    const sz = se.severity === 3 ? 7 : se.severity === 2 ? 5.5 : 4;
+    const seCol = se.severity === 3 ? '#ef4444' : se.severity === 2 ? '#f59e0b' : '#10b981';
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(Math.PI / 4);
+    ctx.fillStyle = seCol;
+    ctx.beginPath();
+    ctx.rect(-sz / 2, -sz / 2, sz, sz);
+    ctx.fill();
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.restore();
+  }
+
   // ── Today line ────────────────────────────────────────
   const nowX = xOf(Date.now());
   if (nowX >= pL && nowX <= pL + plotW) {
@@ -1521,40 +1551,48 @@ function calcDrugLevelAt(ms) {
 }
 
 function renderDrugLevel() {
-  const card = document.getElementById('drug-level-card');
+  const chartCard = document.getElementById('home-chart-card');
+  if (!chartCard) return;
 
+  // ── 주사 기록 없을 때 ────────────────────────────────
   if (injections.length === 0) {
-    card.innerHTML = `
-      <div class="card-title">체내 잔류 농도</div>
-      <div class="empty-state" style="padding:20px">
-        <div class="empty-icon">🧪</div>
-        <p>주사 기록을 추가하면 잔류 농도가 표시됩니다</p>
-      </div>`;
-    const chartCard = document.getElementById('home-chart-card');
-    if (chartCard) chartCard.style.display = 'none';
+    const wEmpty = weights.length === 0
+      ? ''
+      : (() => {
+          const first = weights[0], latest = weights[weights.length - 1];
+          const diff = latest.value - first.value;
+          const arrow = diff < 0 ? '▼' : diff > 0 ? '▲' : '━';
+          const col = diff < 0 ? 'var(--success)' : diff > 0 ? 'var(--danger)' : 'var(--gray-500)';
+          return `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--gray-100);font-size:12px;color:var(--gray-500)">
+            체중 <span style="font-size:15px;font-weight:700;color:#111827">${latest.value}</span>kg
+            <span style="font-size:12px;font-weight:700;color:${col};margin-left:4px">${arrow}${Math.abs(diff).toFixed(1)}</span>
+          </div>`;
+        })();
+    chartCard.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <div><span style="font-size:13px;font-weight:700;color:var(--primary)">Mounjaro</span><span style="font-size:13px;font-weight:700;color:var(--gray-700)"> Report</span></div>
+      </div>
+      <div style="text-align:center;padding:14px 0 8px;color:var(--gray-500);font-size:13px">
+        🧪 주사 기록을 추가하면 농도 그래프가 표시됩니다
+      </div>
+      ${wEmpty}`;
     return;
   }
 
+  // ── 약물 농도 계산 ───────────────────────────────────
   const nowMs = Date.now();
   const currentLevel = calcDrugLevelAt(nowMs);
-
   const last = injections[injections.length - 1];
   const lastMs = new Date(last.date + 'T12:00:00').getTime();
   const hoursSinceLast = (nowMs - lastMs) / 3600000;
-  const daysSinceLast = hoursSinceLast / 24;
-
-  // Steady-state peak for current dose: D / (1 - 0.5^(7/t½))
   const currentDose = parseFloat(last.dose);
   const weekDecay = Math.pow(0.5, 7 / HALF_LIFE);
   const ssPeak = currentDose / (1 - weekDecay);
   const pct = Math.min(currentLevel / ssPeak, 1.0);
-
-  // Next injection & trough
   const nextMs = lastMs + 7 * 86400000;
   const daysToNext = (nextMs - nowMs) / 86400000;
   const troughLevel = calcDrugLevelAt(nextMs);
 
-  // Color + label by percentage of steady-state peak
   let color, label;
   if (pct >= 0.55)      { color = '#10b981'; label = '치료 범위'; }
   else if (pct >= 0.30) { color = '#f59e0b'; label = '감소 중'; }
@@ -1564,27 +1602,80 @@ function renderDrugLevel() {
     ? `<span style="color:var(--danger)">지남</span>`
     : `${daysToNext.toFixed(1)}<span class="level-meta-unit">일</span>`;
 
-  card.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <div class="card-title" style="margin-bottom:0">체내 잔류 농도</div>
-      <span style="font-size:11px;color:var(--gray-500)">반감기 ${HALF_LIFE}일 기준</span>
-    </div>
+  // ── 체중 컴팩트 텍스트 ──────────────────────────────
+  const weightInline = (() => {
+    if (weights.length === 0) return `<span style="font-size:11px;color:var(--gray-400)">체중 없음</span>`;
+    const latest = weights[weights.length - 1];
+    const latestDate = new Date(latest.date);
+    const cutoff = new Date(latestDate); cutoff.setDate(cutoff.getDate() - 28);
+    const older = weights.filter(w => new Date(w.date) <= cutoff);
+    const ref = older.length > 0 ? older[older.length - 1] : weights[0];
+    const diff = latest.value - ref.value;
+    const arrow = diff < 0 ? '▼' : diff > 0 ? '▲' : '━';
+    const col = diff < 0 ? 'var(--success)' : diff > 0 ? 'var(--danger)' : 'var(--gray-500)';
+    return `<span style="font-size:14px;font-weight:700">${latest.value}</span><span style="font-size:10px;color:var(--gray-500)">kg</span>&nbsp;<span style="font-size:11px;font-weight:700;color:${col}">${arrow}${Math.abs(diff).toFixed(1)}</span>`;
+  })();
 
-    <div style="text-align:center;margin:12px 0 16px">
-      <div style="font-size:36px;font-weight:700;color:#111827;line-height:1">${currentLevel.toFixed(2)}</div>
-      <div style="font-size:13px;color:#6b7280;margin-top:4px">mg 잔류 추정</div>
-      <div style="display:inline-block;margin-top:8px;padding:4px 14px;border-radius:20px;background:${color}22;font-size:13px;font-weight:600;color:${color}">${(pct * 100).toFixed(0)}% · ${label}</div>
-    </div>
-    <div style="margin:0 4px 4px">
-      <div style="height:14px;border-radius:7px;background:#e5e7eb;overflow:hidden">
-        <div style="height:100%;width:${(pct * 100).toFixed(1)}%;background:${color};border-radius:7px;transition:width 0.4s"></div>
+  // ── 통합 카드 렌더 (마운자로 리포트) ─────────────────
+  chartCard.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <div>
+        <span style="font-size:13px;font-weight:700;color:var(--primary)">Mounjaro</span>
+        <span style="font-size:13px;font-weight:700;color:var(--gray-700)"> Report</span>
       </div>
-      <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:11px;color:#9ca3af">
-        <span>0</span><span>${ssPeak.toFixed(1)}mg</span>
+      <span style="font-size:10px;color:var(--gray-400)">드래그·스크롤로 탐색</span>
+    </div>
+    <canvas id="combo-chart-home" class="chart-canvas"></canvas>
+    <div class="chart-legend" style="margin-top:6px;margin-bottom:8px">
+      <div class="legend-item"><div style="width:16px;height:2px;background:#6366f1;border-radius:1px"></div>잔류 농도</div>
+      <div class="legend-item"><div style="width:9px;height:9px;border-radius:50%;background:#10b981;flex-shrink:0"></div>체중</div>
+      <div class="legend-item"><div style="width:2px;height:12px;background:rgba(239,68,68,0.5)"></div>오늘</div>
+      ${sideEffects.length > 0 ? '<div class="legend-item"><div style="width:9px;height:9px;transform:rotate(45deg);background:#f59e0b;flex-shrink:0"></div>부작용</div>' : ''}
+    </div>
+    ${(() => {
+      const targetW = userProfile.targetWeight;
+      const startW  = weights.length > 0 ? weights[0].value : null;
+      const curW    = weights.length > 0 ? weights[weights.length - 1].value : null;
+      let weightBarHtml;
+      if (targetW && startW && curW && startW > targetW) {
+        const totalLoss = startW - targetW;
+        const achieved  = Math.min(Math.max(startW - curW, 0), totalLoss);
+        const wpct      = achieved / totalLoss;
+        weightBarHtml = `<div style="flex:1;min-width:0">
+          <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--gray-400);margin-bottom:2px">
+            <span>${startW}kg</span><span>목표 ${targetW}kg</span>
+          </div>
+          <div style="position:relative;height:6px;border-radius:3px;background:linear-gradient(to right,#e5e7eb,#6366f1);overflow:hidden">
+            <div style="position:absolute;top:0;right:0;height:100%;width:${((1-wpct)*100).toFixed(1)}%;background:#e5e7eb;transition:width 0.4s"></div>
+          </div>
+        </div>`;
+      } else {
+        weightBarHtml = `<div style="flex:1;min-width:0;font-size:10px;color:var(--gray-400);text-align:right;padding-top:2px">목표 체중 미설정</div>`;
+      }
+      return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:5px">
+        <div style="white-space:nowrap">
+          <span style="font-size:11px;color:var(--gray-500)">체중&nbsp;</span>${weightInline}
+        </div>
+        ${weightBarHtml}
+      </div>`;
+    })()}
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <div style="white-space:nowrap">
+        <span style="font-size:11px;color:var(--gray-500)">잔류&nbsp;</span>
+        <span style="font-size:14px;font-weight:700;color:#111827">${currentLevel.toFixed(2)}</span>
+        <span style="font-size:10px;color:var(--gray-500)">mg</span>
+        <span style="font-size:11px;font-weight:700;color:${color};margin-left:4px">${(pct * 100).toFixed(0)}%</span>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--gray-400);margin-bottom:2px">
+          <span>0</span><span>${label}</span>
+        </div>
+        <div style="height:6px;border-radius:3px;background:#e5e7eb;overflow:hidden">
+          <div style="height:100%;width:${(pct * 100).toFixed(1)}%;background:${color};border-radius:3px;transition:width 0.4s"></div>
+        </div>
       </div>
     </div>
-
-    <div class="level-meta-grid">
+    <div class="level-meta-grid" style="margin-bottom:4px">
       <div class="level-meta-cell">
         <div class="level-meta-label">주사 후 경과</div>
         <div class="level-meta-val">${Math.max(hoursSinceLast, 0).toFixed(0)}<span class="level-meta-unit">h</span></div>
@@ -1598,26 +1689,9 @@ function renderDrugLevel() {
         <div class="level-meta-val">${troughLevel.toFixed(2)}<span class="level-meta-unit">mg</span></div>
       </div>
     </div>
+    <div style="font-size:9px;color:var(--gray-400)">⚠️ 참고용 추정값 · 의학적 판단 불가</div>`;
 
-    <div style="margin-top:8px;font-size:10px;color:var(--gray-400)">⚠️ 참고용 추정값 · 의학적 판단 불가</div>`;
-
-  // Populate home chart card separately to avoid SVG overflow overlap
-  const chartCard = document.getElementById('home-chart-card');
-  if (chartCard) {
-    chartCard.style.display = '';
-    chartCard.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <span style="font-size:13px;font-weight:600;color:var(--gray-700)">농도 · 체중 통합 그래프</span>
-        <span style="font-size:10px;color:var(--gray-400)">드래그·스크롤로 탐색</span>
-      </div>
-      <canvas id="combo-chart-home" class="chart-canvas"></canvas>
-      <div class="chart-legend" style="margin-top:8px">
-        <div class="legend-item"><div style="width:16px;height:2px;background:#6366f1;border-radius:1px"></div>잔류 농도</div>
-        <div class="legend-item"><div style="width:9px;height:9px;border-radius:50%;background:#10b981;flex-shrink:0"></div>체중</div>
-        <div class="legend-item"><div style="width:2px;height:12px;background:rgba(239,68,68,0.5)"></div>오늘</div>
-      </div>`;
-    setTimeout(ccHomeInit, 30);
-  }
+  setTimeout(ccHomeInit, 30);
 }
 
 // ─── Algorithm A: Food Noise Alert Engine ─────────────
@@ -1747,39 +1821,37 @@ function renderDoseOptimization() {
   const m = statusMeta[r.status] || statusMeta.ok;
 
   const metaRow = r.weightSlope !== null ? `
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:12px 0">
-      <div style="text-align:center;background:var(--gray-50);border-radius:8px;padding:8px">
-        <div style="font-size:10px;color:var(--gray-500);margin-bottom:2px">4주 체중 기울기</div>
-        <div style="font-size:14px;font-weight:700;color:${r.weightSlope <= -0.02 ? '#10b981' : '#ef4444'}">${r.weightSlope !== null ? (r.weightSlope * 7).toFixed(2) : '-'}<span style="font-size:10px;font-weight:400;color:var(--gray-500)"> kg/주</span></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:6px 0;max-width:320px;margin-left:auto;margin-right:auto">
+      <div style="text-align:center;background:var(--gray-50);border-radius:8px;padding:4px 8px">
+        <div style="font-size:9px;color:var(--gray-500);margin-bottom:1px">복약 순응도</div>
+        <div style="font-size:14px;font-weight:700;color:${r.alpha >= 0.875 ? '#10b981' : '#f59e0b'}">${(r.alpha * 100).toFixed(0)}<span style="font-size:9px;font-weight:400;color:var(--gray-500)">%</span></div>
       </div>
-      <div style="text-align:center;background:var(--gray-50);border-radius:8px;padding:8px">
-        <div style="font-size:10px;color:var(--gray-500);margin-bottom:2px">복약 순응도</div>
-        <div style="font-size:14px;font-weight:700;color:${r.alpha >= 0.875 ? '#10b981' : '#f59e0b'}">${(r.alpha * 100).toFixed(0)}<span style="font-size:10px;font-weight:400;color:var(--gray-500)">%</span></div>
-      </div>
-      <div style="text-align:center;background:var(--gray-50);border-radius:8px;padding:8px">
-        <div style="font-size:10px;color:var(--gray-500);margin-bottom:2px">농도 충분도 η</div>
+      <div style="text-align:center;background:var(--gray-50);border-radius:8px;padding:4px 8px">
+        <div style="font-size:9px;color:var(--gray-500);margin-bottom:1px">농도 충분도 η</div>
         <div style="font-size:14px;font-weight:700;color:${r.eta >= 0.85 ? '#10b981' : '#6366f1'}">${r.eta.toFixed(2)}</div>
       </div>
     </div>` : '';
 
   card.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <div style="display:flex;align-items:center;gap:6px">
-        <div class="card-title" style="margin-bottom:0">투여 최적화 분석</div>
-        <button class="info-btn" onclick="showInfoSheet()">?</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <div style="display:flex;align-items:center;gap:4px">
+        <div class="card-title" style="margin-bottom:0;font-size:12px">투여 최적화 분석</div>
+        <button class="info-btn" onclick="showInfoSheet()" style="font-size:9px;padding:0 4px;line-height:14px">?</button>
       </div>
-      <span style="font-size:10px;color:var(--gray-400)">알고리즘 기반</span>
+      <span style="font-size:9px;color:var(--gray-400)">알고리즘 기반</span>
     </div>
-    <div style="background:${m.bg};border:1px solid ${m.border};border-radius:10px;padding:12px">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-        <span style="font-size:18px">${m.icon}</span>
-        <span style="font-size:14px;font-weight:700;color:${m.color}">${r.recommendation}</span>
+    <div style="display:flex;gap:6px;align-items:stretch">
+      <div style="flex:1;background:${m.bg};border:1px solid ${m.border};border-radius:8px;padding:8px">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+          <span style="font-size:15px">${m.icon}</span>
+          <span style="font-size:12px;font-weight:700;color:${m.color}">${r.recommendation}</span>
+        </div>
+        <div style="font-size:11px;color:#374151;line-height:1.4">${r.detail}</div>
       </div>
-      <div style="font-size:12px;color:#374151;line-height:1.6">${r.detail}</div>
-      ${r.action ? `<div style="margin-top:8px;padding:8px 10px;background:white;border-radius:8px;font-size:12px;font-weight:600;color:${m.color}">→ ${r.action}</div>` : ''}
+      ${r.action ? `<div style="min-width:110px;max-width:130px;background:white;border:1px solid ${m.border};border-radius:8px;padding:8px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:11px;font-weight:600;color:${m.color}">→ ${r.action}</div>` : ''}
     </div>
     ${metaRow}
-    <div style="font-size:10px;color:var(--gray-500);margin-top:4px">⚠️ 본 분석은 참고용이며 최종 판단은 반드시 의료진과 상의하세요.</div>`;
+    <div style="font-size:9px;color:var(--gray-500);margin-top:3px">⚠️ 본 분석은 참고용이며 최종 판단은 반드시 의료진과 상의하세요.</div>`;
 }
 
 // ─── Profile ──────────────────────────────────────────
@@ -1793,12 +1865,14 @@ function selectLevel(el) {
 }
 function saveProfile() {
   const age = parseInt(document.getElementById('prof-age').value);
+  const tw  = parseFloat(document.getElementById('prof-target-weight').value);
   const genderEl = document.querySelector('#prof-gender-grid .site-opt.selected');
   const levelEl  = document.querySelector('#prof-level-grid .site-opt.selected');
   userProfile = {
-    age:    isNaN(age) ? null : age,
-    gender: genderEl ? genderEl.dataset.gender : null,
-    level:  levelEl  ? levelEl.dataset.level   : null,
+    age:          isNaN(age) ? null : age,
+    gender:       genderEl ? genderEl.dataset.gender : null,
+    level:        levelEl  ? levelEl.dataset.level   : null,
+    targetWeight: isNaN(tw) ? null : tw,
   };
   DB.set('mj_profile', userProfile);
   showToast('프로필이 저장되었습니다');
@@ -1808,6 +1882,8 @@ function initProfileForm() {
   const prof = userProfile;
   const ageEl = document.getElementById('prof-age');
   if (ageEl && prof.age) ageEl.value = prof.age;
+  const twEl = document.getElementById('prof-target-weight');
+  if (twEl && prof.targetWeight) twEl.value = prof.targetWeight;
   if (prof.gender) {
     document.querySelectorAll('#prof-gender-grid .site-opt').forEach(el => {
       el.classList.toggle('selected', el.dataset.gender === prof.gender);
@@ -2083,12 +2159,16 @@ function renderTimeline() {
   const el = document.getElementById('unified-timeline');
   if (!el) return;
 
-  const items = [];
-  injections.forEach(i  => items.push({ type: 'inj', date: i.date,  data: i  }));
-  weights.forEach(w     => items.push({ type: 'wt',  date: w.date,  data: w  }));
-  sideEffects.forEach(s => items.push({ type: 'se',  date: s.date,  data: s  }));
-  exerciseLogs.forEach(x => items.push({ type: 'ex', date: x.date,  data: x  }));
-  items.sort((a, b) => b.date.localeCompare(a.date));
+  const all = [];
+  injections.forEach(i  => all.push({ type: 'inj', date: i.date, data: i }));
+  weights.forEach(w     => all.push({ type: 'wt',  date: w.date, data: w }));
+  sideEffects.forEach(s => all.push({ type: 'se',  date: s.date, data: s }));
+  exerciseLogs.forEach(x => all.push({ type: 'ex', date: x.date, data: x }));
+  all.sort((a, b) => b.date.localeCompare(a.date));
+
+  const items = timelineFilter === 'all'
+    ? all
+    : all.filter(i => i.type === timelineFilter);
 
   if (items.length === 0) {
     el.innerHTML = `<div class="empty-state" style="padding:20px"><div class="empty-icon">📋</div><p>기록이 없습니다</p></div>`;
@@ -2096,17 +2176,24 @@ function renderTimeline() {
   }
 
   const sevLabel = { 1: '가벼움', 2: '중간', 3: '심함' };
-  el.innerHTML = `<div class="timeline">${items.slice(0, 40).map(item => {
-    let icon, main, sub = '';
+  const PAGE = 5;
+  const displayItems = timelineExpanded ? items : items.slice(0, PAGE);
+  const hasMore = !timelineExpanded && items.length > PAGE;
+
+  const renderItem = item => {
+    let icon, main, sub = '', deleteBtn = '';
     if (item.type === 'inj') {
       icon = '💉'; main = `${item.data.dose}mg · ${item.data.site}`;
       sub = item.data.memo || '';
+      deleteBtn = `<button class="btn btn-danger btn-sm" onclick="deleteInjection(${item.data.id})">삭제</button>`;
     } else if (item.type === 'wt') {
       icon = '⚖️'; main = `${item.data.value} kg`;
       sub = item.data.memo || '';
+      deleteBtn = `<button class="btn btn-danger btn-sm" onclick="deleteWeight(${item.data.id})">삭제</button>`;
     } else if (item.type === 'se') {
       icon = '⚠️'; main = item.data.symptoms.join(', ');
       sub = sevLabel[item.data.severity] + (item.data.memo ? ' · ' + item.data.memo : '');
+      deleteBtn = `<button class="btn btn-danger btn-sm" onclick="deleteSE(${item.data.id})">삭제</button>`;
     } else {
       icon = '🏋️'; main = '운동 완료'; sub = '';
     }
@@ -2117,8 +2204,12 @@ function renderTimeline() {
         <div class="timeline-main">${main}</div>
         ${sub ? `<div class="timeline-sub">${sub}</div>` : ''}
       </div>
+      ${deleteBtn}
     </div>`;
-  }).join('')}</div>`;
+  };
+
+  el.innerHTML = `<div class="timeline">${displayItems.map(renderItem).join('')}</div>
+    ${hasMore ? `<button class="btn" style="width:100%;justify-content:center;margin-top:8px;background:var(--gray-100);color:var(--gray-700)" onclick="showAllTimeline()">더보기</button>` : ''}`;
 }
 
 // ─── Weekly exercise goal ──────────────────────────────
@@ -2270,72 +2361,9 @@ function renderHome() {
     document.getElementById('days-left').textContent = badge;
   }
 
-  // Stats
+  // 총 투여 횟수 (배너 내 표시)
   document.getElementById('stat-weeks').textContent = injections.length;
-  document.getElementById('stat-current-dose').textContent = last ? last.dose + 'mg' : '-';
 
-  if (weights.length >= 2) {
-    const loss = (weights[0].value - weights[weights.length - 1].value).toFixed(1);
-    const el = document.getElementById('stat-weight-loss');
-    if (parseFloat(loss) > 0) { el.textContent = '-' + loss; el.style.color = 'var(--success)'; }
-    else if (parseFloat(loss) < 0) { el.textContent = '+' + Math.abs(loss); el.style.color = 'var(--danger)'; }
-    else { el.textContent = '0'; }
-  }
-
-  // Weight summary with 4-week avg
-  const ws = document.getElementById('weight-summary');
-  if (weights.length > 0) {
-    const first = weights[0], latest = weights[weights.length - 1];
-    const totalDiff = (latest.value - first.value);
-    const totalCls = totalDiff < 0 ? 'loss' : totalDiff > 0 ? 'gain' : 'same';
-    const totalArrow = totalDiff < 0 ? '▼' : totalDiff > 0 ? '▲' : '━';
-
-    // 4-week average weekly loss
-    const nowMs = Date.now();
-    const w28 = nowMs - 28 * 86400000;
-    const wBefore = weights.filter(w => new Date(w.date + 'T12:00:00').getTime() < w28);
-    const wAfter  = weights.filter(w => new Date(w.date + 'T12:00:00').getTime() >= w28);
-    let avgHtml = '';
-    if (wBefore.length > 0 && wAfter.length > 0) {
-      const lossKg = wBefore[wBefore.length - 1].value - wAfter[wAfter.length - 1].value;
-      const weeklyLoss = lossKg / 4;
-      const avgColor = weeklyLoss > 0 ? 'var(--success)' : weeklyLoss < 0 ? 'var(--danger)' : 'var(--gray-500)';
-      avgHtml = `
-        <div class="divider"></div>
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div style="font-size:12px;color:var(--gray-500)">4주 평균 주당 감소</div>
-          <div style="font-size:20px;font-weight:700;color:${avgColor}">${weeklyLoss > 0 ? '▼' : weeklyLoss < 0 ? '▲' : '━'} ${Math.abs(weeklyLoss).toFixed(2)} <span style="font-size:12px;font-weight:400">kg/주</span></div>
-        </div>`;
-    } else if (weights.length >= 2) {
-      const days = Math.max(1, (new Date(latest.date + 'T12:00:00') - new Date(first.date + 'T12:00:00')) / 86400000);
-      const weeklyLoss = (first.value - latest.value) / days * 7;
-      const avgColor = weeklyLoss > 0 ? 'var(--success)' : weeklyLoss < 0 ? 'var(--danger)' : 'var(--gray-500)';
-      avgHtml = `
-        <div class="divider"></div>
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div style="font-size:12px;color:var(--gray-500)">전체 평균 주당 감소</div>
-          <div style="font-size:20px;font-weight:700;color:${avgColor}">${weeklyLoss > 0 ? '▼' : weeklyLoss < 0 ? '▲' : '━'} ${Math.abs(weeklyLoss).toFixed(2)} <span style="font-size:12px;font-weight:400">kg/주</span></div>
-        </div>`;
-    }
-
-    ws.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div>
-          <div style="font-size:11px;color:var(--gray-500)">시작</div>
-          <div style="font-size:20px;font-weight:700">${first.value}<span style="font-size:12px;font-weight:400"> kg</span></div>
-        </div>
-        <div style="text-align:center">
-          <span class="change-chip ${totalCls}" style="font-size:14px;padding:5px 14px">${totalArrow} ${Math.abs(totalDiff).toFixed(1)} kg</span>
-        </div>
-        <div style="text-align:right">
-          <div style="font-size:11px;color:var(--gray-500)">현재</div>
-          <div style="font-size:20px;font-weight:700">${latest.value}<span style="font-size:12px;font-weight:400"> kg</span></div>
-        </div>
-      </div>
-      ${avgHtml}`;
-  } else {
-    ws.innerHTML = `<div class="empty-state" style="padding:20px"><div class="empty-icon">⚖️</div><p>체중 기록이 없습니다</p></div>`;
-  }
 }
 
 function renderWeightChart() {
