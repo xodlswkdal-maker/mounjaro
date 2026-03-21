@@ -1143,7 +1143,7 @@ function ccHomeInit() {
 
   const container = CC_HOME.el.parentElement;
   const cssW = Math.max(220, container.clientWidth || 340);
-  const cssH = Math.round(Math.min(220, Math.max(160, cssW * 0.55)));
+  const cssH = Math.round(Math.min(300, Math.max(220, cssW * 0.72)));
   CC_HOME.el.style.width  = cssW + 'px';
   CC_HOME.el.style.height = cssH + 'px';
   CC_HOME.el.width  = Math.round(cssW * CC_HOME.dpr);
@@ -1606,11 +1606,8 @@ function renderDrugLevel() {
   const weightInline = (() => {
     if (weights.length === 0) return `<span style="font-size:11px;color:var(--gray-400)">체중 없음</span>`;
     const latest = weights[weights.length - 1];
-    const latestDate = new Date(latest.date);
-    const cutoff = new Date(latestDate); cutoff.setDate(cutoff.getDate() - 28);
-    const older = weights.filter(w => new Date(w.date) <= cutoff);
-    const ref = older.length > 0 ? older[older.length - 1] : weights[0];
-    const diff = latest.value - ref.value;
+    const first  = weights[0];
+    const diff = latest.value - first.value;
     const arrow = diff < 0 ? '▼' : diff > 0 ? '▲' : '━';
     const col = diff < 0 ? 'var(--success)' : diff > 0 ? 'var(--danger)' : 'var(--gray-500)';
     return `<span style="font-size:14px;font-weight:700">${latest.value}</span><span style="font-size:10px;color:var(--gray-500)">kg</span>&nbsp;<span style="font-size:11px;font-weight:700;color:${col}">${arrow}${Math.abs(diff).toFixed(1)}</span>`;
@@ -1673,20 +1670,6 @@ function renderDrugLevel() {
         <div style="height:6px;border-radius:3px;background:#e5e7eb;overflow:hidden">
           <div style="height:100%;width:${(pct * 100).toFixed(1)}%;background:${color};border-radius:3px;transition:width 0.4s"></div>
         </div>
-      </div>
-    </div>
-    <div class="level-meta-grid" style="margin-bottom:4px">
-      <div class="level-meta-cell">
-        <div class="level-meta-label">주사 후 경과</div>
-        <div class="level-meta-val">${Math.max(hoursSinceLast, 0).toFixed(0)}<span class="level-meta-unit">h</span></div>
-      </div>
-      <div class="level-meta-cell">
-        <div class="level-meta-label">다음 주사까지</div>
-        <div class="level-meta-val">${daysToNextStr}</div>
-      </div>
-      <div class="level-meta-cell">
-        <div class="level-meta-label">주사 시 잔류</div>
-        <div class="level-meta-val">${troughLevel.toFixed(2)}<span class="level-meta-unit">mg</span></div>
       </div>
     </div>
     <div style="font-size:9px;color:var(--gray-400)">⚠️ 참고용 추정값 · 의학적 판단 불가</div>`;
