@@ -1,0 +1,5 @@
+# 소스 파일 — 로컬에만 보관, 절대 배포하지 말 것
+app.html
+
+# Node
+node_modules/
