@@ -525,6 +525,58 @@
   .goal-ring-wrap { display: flex; flex-direction: column; align-items: center; padding: 8px 0 4px; }
   .goal-ring-label { font-size: 12px; color: var(--gray-500); margin-top: 4px; }
 
+  /* ─── Integrated Coaching ──────────────────────── */
+  .coaching-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;
+  }
+  .coaching-stat {
+    background: var(--gray-50); border-radius: 10px; padding: 10px 8px; text-align: center;
+  }
+  .coaching-stat-val  { font-size: 20px; font-weight: 800; line-height: 1.1; }
+  .coaching-stat-label{ font-size: 10px; color: var(--gray-500); margin-top: 3px; }
+
+  .coaching-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
+  }
+
+  .rate-badge {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; flex-shrink: 0;
+  }
+  .rate-badge.fast    { background: #e0f2fe; color: #0369a1; }
+  .rate-badge.optimal { background: var(--success-light); color: var(--success); }
+  .rate-badge.slow    { background: var(--warning-light); color: #b45309; }
+  .rate-badge.plateau { background: var(--gray-100); color: var(--gray-500); }
+  .rate-badge.gaining { background: var(--danger-light); color: var(--danger); }
+  .rate-badge.unknown { background: var(--gray-100); color: var(--gray-400); }
+
+  .coaching-action {
+    border-radius: 10px; padding: 12px 13px; margin-top: 10px;
+    border-left: 3px solid currentColor;
+  }
+  .coaching-action-title { font-size: 12px; font-weight: 700; margin-bottom: 5px; }
+  .coaching-action-body  { font-size: 12px; line-height: 1.55; color: var(--gray-700); }
+
+  /* Diet targets */
+  .diet-targets-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; margin: 10px 0; }
+  .diet-target {
+    background: var(--gray-50); border-radius: 9px; padding: 9px 6px; text-align: center;
+  }
+  .diet-target-val   { font-size: 15px; font-weight: 800; color: var(--gray-900); }
+  .diet-target-unit  { font-size: 9px; color: var(--gray-400); font-weight: 400; }
+  .diet-target-label { font-size: 10px; color: var(--gray-500); margin-top: 2px; }
+
+  /* Weight rate modifier notice in exercise card */
+  .weight-advisory {
+    display: flex; align-items: flex-start; gap: 8px;
+    padding: 8px 10px; border-radius: 8px; margin-bottom: 8px;
+    background: #f0f9ff; border-left: 3px solid #0369a1;
+    font-size: 11px; color: var(--gray-700); line-height: 1.5;
+  }
+  .weight-advisory.warn { background: #fffbeb; border-left-color: #d97706; }
+  .weight-advisory.danger { background: #fef2f2; border-left-color: #dc2626; }
+
   /* ─── Team Tab ─────────────────────────────────── */
   .owner-banner {
     background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
@@ -984,14 +1036,23 @@
   <!-- ROUTINE TAB (루틴 체계화) -->
   <div class="section" id="tab-analysis">
 
+    <!-- 종합 코칭 카드 (농도 + 감량 속도 통합) -->
+    <div class="card" id="integrated-coaching-card" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div class="card-title" style="margin-bottom:0">오늘의 종합 코칭</div>
+        <span id="coaching-status-badge" class="coaching-badge"></span>
+      </div>
+      <div id="integrated-coaching-content"></div>
+    </div>
+
     <!-- 운동 추천 카드 -->
     <div class="card" id="exercise-home-card" style="display:none"></div>
 
     <!-- 운동 목표 달성률 -->
     <div class="card" id="exercise-goal-card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div class="card-title" style="margin-bottom:0">운동 목표 달성률</div>
-        <span style="font-size:11px;color:var(--gray-500)">주 4회 목표</span>
+        <div class="card-title" style="margin-bottom:0">이번 주 운동 달성률</div>
+        <span id="exercise-goal-target-label" style="font-size:11px;color:var(--gray-500)">주 4회 목표</span>
       </div>
       <div id="exercise-goal-content">
         <div class="empty-state" style="padding:20px">
@@ -1002,9 +1063,12 @@
       <button class="btn btn-primary" style="margin-top:12px" onclick="logExerciseToday()">오늘 운동 완료 ✓</button>
     </div>
 
-    <!-- 식단 분석 -->
+    <!-- 식단 + 영양 가이드 -->
     <div class="card" id="diet-analysis-card">
-      <div class="card-title">식단 분석</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div class="card-title" style="margin-bottom:0">식단 · 영양 가이드</div>
+        <span id="diet-rate-badge" class="rate-badge unknown" style="display:none"></span>
+      </div>
       <div id="diet-analysis-content">
         <div class="empty-state" style="padding:20px">
           <div class="empty-icon">🥗</div>
@@ -2141,6 +2205,31 @@ function calcConcentrationZone() {
   return                         { zone: 'low',  level, theta };
 }
 
+// ─── Weight loss rate classifier ──────────────────────
+function calcWeightLossRate() {
+  if (weights.length < 2) return { rate: 'unknown', weeklyKg: null };
+  const nowMs = Date.now();
+  const DAY = 86400000;
+  const w28 = nowMs - 28 * DAY;
+  let weeklyKg;
+  const older  = weights.filter(w => new Date(w.date + 'T12:00:00').getTime() < w28);
+  const recent = weights.filter(w => new Date(w.date + 'T12:00:00').getTime() >= w28);
+  if (older.length > 0 && recent.length > 0) {
+    weeklyKg = (recent[recent.length - 1].value - older[older.length - 1].value) / 4;
+  } else {
+    const first = weights[0], last2 = weights[weights.length - 1];
+    const days = Math.max(1, (new Date(last2.date + 'T12:00:00') - new Date(first.date + 'T12:00:00')) / DAY);
+    weeklyKg = (last2.value - first.value) / (days / 7);
+  }
+  let rate;
+  if      (weeklyKg < -1.0) rate = 'fast';
+  else if (weeklyKg < -0.5) rate = 'optimal';
+  else if (weeklyKg < -0.1) rate = 'slow';
+  else if (weeklyKg <=  0.1) rate = 'plateau';
+  else                       rate = 'gaining';
+  return { rate, weeklyKg };
+}
+
 function calcExerciseRecommendation() {
   const zoneInfo = calcConcentrationZone();
   if (!zoneInfo) return null;
@@ -2152,7 +2241,9 @@ function calcExerciseRecommendation() {
   const hasMild   = recentSE.length > 0 && !hasSevere;
 
   const lv = userProfile.level || 'beginner';
+  const wRate = calcWeightLossRate();
 
+  // ─ Base exercise config per zone ──────────────────
   const ZONES = {
     peak: {
       label: '고농도 (Peak)', color: '#dc2626', bg: '#fee2e2', icon: '🔴',
@@ -2174,21 +2265,24 @@ function calcExerciseRecommendation() {
     },
     low: {
       label: '저농도 (Low)', color: '#d97706', bg: '#fef3c7', icon: '🟡',
-      strategy: '컨디션 확인 후 고강도 가능',
+      strategy: '고강도 운동 가능 구간',
       cardio:   { beginner: '중강도 걷기·조깅 30분', intermediate: '인터벌 런닝 또는 HIIT 30분', advanced: 'HIIT 또는 고강도 유산소 35~45분' },
       strength: { beginner: '기본 전신 근력 3세트', intermediate: '근력 위주 + 복합 운동', advanced: '최대 중량 80~90% 근력 운동' },
       avoid: '식욕 회복 구간이므로 과식 주의, 운동 후 과도한 보상 심리 경계',
-      tip: '약효가 약해지는 구간입니다. 식욕이 돌아올 수 있으니 식단 관리에 더 신경 쓰세요. 컨디션이 좋다면 고강도 운동도 가능합니다.',
+      tip: '약효가 약해지는 구간입니다. 식욕이 돌아올 수 있으니 식단 관리에 더 신경 쓰세요.',
       frequency: { beginner: '주 3회', intermediate: '주 4~5회', advanced: '주 5~6회' },
     },
   };
 
   const base = ZONES[zone];
   const downgrade = { advanced: 'intermediate', intermediate: 'beginner', beginner: 'rest' };
+  const upgrade   = { beginner: 'intermediate', intermediate: 'advanced', advanced: 'advanced' };
 
   let effectiveLv = lv;
   let intensityModifier = '';
+  let weightAdvisory = null;  // { type: 'info'|'warn'|'danger', text }
 
+  // ─ Side-effect modifier (priority override) ─────────
   if (hasSevere) {
     intensityModifier = '⚠️ 심한 부작용으로 강도 하향 조정';
     effectiveLv = downgrade[lv] || 'rest';
@@ -2198,9 +2292,45 @@ function calcExerciseRecommendation() {
     if (effectiveLv === 'rest') effectiveLv = 'beginner';
   }
 
+  // ─ Weight-rate modifier (applied after side-effect) ─
+  if (effectiveLv !== 'rest' && wRate.rate !== 'unknown') {
+    if (wRate.rate === 'fast') {
+      // Losing > 1 kg/week → downgrade to protect muscle
+      effectiveLv = downgrade[effectiveLv] || effectiveLv;
+      weightAdvisory = {
+        type: 'danger',
+        text: `주간 감량 ${Math.abs(wRate.weeklyKg).toFixed(2)} kg — 과속 감량으로 근손실 위험이 높습니다. 강도를 낮추고 단백질 섭취를 늘리세요.`
+      };
+    } else if (wRate.rate === 'slow' && zone !== 'peak') {
+      // Losing slowly + not at peak → can try to upgrade
+      effectiveLv = upgrade[effectiveLv];
+      weightAdvisory = {
+        type: 'warn',
+        text: `주간 감량 ${Math.abs(wRate.weeklyKg).toFixed(2)} kg — 감량이 느립니다. 운동 강도를 높여 칼로리 소모를 늘리세요.`
+      };
+    } else if (wRate.rate === 'plateau') {
+      effectiveLv = upgrade[effectiveLv];
+      weightAdvisory = {
+        type: 'warn',
+        text: `체중이 정체 중입니다. 강도를 높이고 식단을 재점검하세요 (특히 저농도 구간 과식 주의).`
+      };
+    } else if (wRate.rate === 'gaining') {
+      effectiveLv = upgrade[effectiveLv];
+      weightAdvisory = {
+        type: 'danger',
+        text: `체중이 증가 중입니다 (+${Math.abs(wRate.weeklyKg).toFixed(2)} kg/주). 운동 강도를 최대로 높이고 식단을 즉시 점검하세요.`
+      };
+    } else if (wRate.rate === 'optimal') {
+      weightAdvisory = {
+        type: 'info',
+        text: `주간 감량 ${Math.abs(wRate.weeklyKg).toFixed(2)} kg — 이상적인 속도입니다. 현재 루틴을 유지하세요.`
+      };
+    }
+  }
+
   if (effectiveLv === 'rest') {
     return {
-      zone, level, theta, intensityModifier,
+      zone, level, theta, wRate, intensityModifier, weightAdvisory,
       label: base.label, color: base.color, bg: base.bg, icon: base.icon, strategy: base.strategy,
       cardio: '오늘은 휴식을 권장합니다. 가벼운 스트레칭만 하세요.',
       strength: '충분한 수분 섭취와 소화하기 쉬운 식단을 유지하세요.',
@@ -2212,7 +2342,7 @@ function calcExerciseRecommendation() {
   }
 
   return {
-    zone, level, theta, intensityModifier,
+    zone, level, theta, wRate, intensityModifier, weightAdvisory,
     label: base.label, color: base.color, bg: base.bg, icon: base.icon, strategy: base.strategy,
     cardio:    base.cardio[effectiveLv]    || base.cardio.beginner,
     strength:  base.strength[effectiveLv]  || base.strength.beginner,
@@ -2233,12 +2363,26 @@ function renderExerciseCard() {
   const levelLabel = { beginner: '입문', intermediate: '중급', advanced: '상급' };
   const profLv = userProfile.level ? ` · ${levelLabel[userProfile.level]}` : '';
 
+  const rateLabels = { fast:'과속감량', optimal:'이상적감량', slow:'감량느림', plateau:'정체', gaining:'체중증가', unknown:'' };
+  const rateBadge = r.wRate && r.wRate.rate !== 'unknown'
+    ? `<span class="rate-badge ${r.wRate.rate}">${rateLabels[r.wRate.rate]}</span>` : '';
+
+  const advisoryHtml = r.weightAdvisory
+    ? `<div class="weight-advisory ${r.weightAdvisory.type === 'danger' ? 'danger' : r.weightAdvisory.type === 'warn' ? 'warn' : ''}">
+        <span style="font-size:14px;flex-shrink:0">${r.weightAdvisory.type === 'danger' ? '🚨' : r.weightAdvisory.type === 'warn' ? '⚠️' : 'ℹ️'}</span>
+        <span>${r.weightAdvisory.text}</span>
+      </div>` : '';
+
   card.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
       <div class="card-title" style="margin-bottom:0">오늘의 운동 추천</div>
-      <span class="zone-pill ${r.zone}">${r.icon} ${r.label}</span>
+      <div style="display:flex;align-items:center;gap:5px">
+        ${rateBadge}
+        <span class="zone-pill ${r.zone}">${r.icon} ${r.label}</span>
+      </div>
     </div>
     ${r.intensityModifier ? `<div class="se-modifier">${r.intensityModifier}</div>` : ''}
+    ${advisoryHtml}
 
     <div class="ex-item-label">유산소</div>
     <div class="ex-item" style="margin-bottom:8px">
@@ -2437,18 +2581,129 @@ function renderTimeline() {
     ${hasMore ? `<button class="btn" style="width:100%;justify-content:center;margin-top:8px;background:var(--gray-100);color:var(--gray-700)" onclick="showAllTimeline()">더보기</button>` : ''}`;
 }
 
+// ─── Integrated Coaching (농도 × 감량속도 종합) ─────────
+function renderIntegratedCoaching() {
+  const card    = document.getElementById('integrated-coaching-card');
+  const content = document.getElementById('integrated-coaching-content');
+  const badge   = document.getElementById('coaching-status-badge');
+  if (!card || !content) return;
+
+  if (injections.length === 0) { card.style.display = 'none'; return; }
+
+  const zoneInfo = calcConcentrationZone();
+  if (!zoneInfo) { card.style.display = 'none'; return; }
+
+  card.style.display = '';
+
+  const wRate   = calcWeightLossRate();
+  const { zone, level, theta } = zoneInfo;
+
+  // Concentration % relative to steady-state peak
+  const last = injections[injections.length - 1];
+  const wDecay = Math.pow(0.5, 7 / HALF_LIFE);
+  const ssPeak = parseFloat(last.dose) / (1 - wDecay);
+  const concPct = ssPeak > 0 ? Math.min(Math.round(level / ssPeak * 100), 999) : 0;
+
+  // Zone meta
+  const ZONE_META = {
+    peak: { label: '고농도', color: '#dc2626', bg: '#fee2e2', icon: '🔴' },
+    mid:  { label: '중간 농도', color: '#059669', bg: '#d1fae5', icon: '🟢' },
+    low:  { label: '저농도',  color: '#d97706', bg: '#fef3c7', icon: '🟡' },
+  };
+  const zm = ZONE_META[zone];
+
+  // Rate meta
+  const RATE_META = {
+    fast:    { label: '과속 감량', color: '#0369a1' },
+    optimal: { label: '이상적 감량', color: '#059669' },
+    slow:    { label: '감량 느림', color: '#b45309' },
+    plateau: { label: '정체', color: '#6b7280' },
+    gaining: { label: '체중 증가', color: '#dc2626' },
+    unknown: { label: '체중 미측정', color: '#9ca3af' },
+  };
+  const rm = RATE_META[wRate.rate];
+
+  // Status badge text
+  if (badge) {
+    badge.textContent = `${zm.icon} ${zm.label} · ${rm.label}`;
+    badge.style.background = zm.bg;
+    badge.style.color = zm.color;
+  }
+
+  // 2D coaching message matrix
+  const COACHING = {
+    peak: {
+      fast:    { icon:'🆘', title:'근손실 경보', body:'고농도·과속 감량의 최악 조합입니다. 지금 당장 칼로리를 200~300kcal 늘리고 단백질(×2.0g/kg)을 최우선으로 채우세요. 운동은 최소한으로만.' },
+      optimal: { icon:'✅', title:'이상적 상태', body:'고농도 구간에서 적절히 감량 중입니다. 가벼운 운동 + 단백질 집중 섭취를 유지하면서 현재 흐름을 이어가세요.' },
+      slow:    { icon:'⚠️', title:'감량 속도 점검', body:'고농도임에도 감량이 느립니다. 식사량(특히 지방·정제 탄수화물)을 점검하고 저녁 식사를 줄여보세요. 부작용으로 무기력하다면 쉬운 걷기라도 유지하세요.' },
+      plateau: { icon:'⏸', title:'정체 극복 필요', body:'고농도 구간인데 체중이 멈췄습니다. 식단 기록을 시작하고 숨겨진 칼로리(음료·간식)를 찾아보세요. 의료진과 용량 조정을 상의할 시점일 수 있습니다.' },
+      gaining: { icon:'🚨', title:'긴급 식단 점검', body:'약이 작용 중임에도 체중이 증가 중입니다. 야식·고칼로리 음료가 주범일 가능성이 높습니다. 오늘부터 식단 일지를 반드시 기록하세요.' },
+      unknown: { icon:'ℹ️', title:'체중 기록 필요', body:'잔류농도 기반 운동 추천은 제공되고 있습니다. 체중을 기록하면 더 정밀한 식단·운동 코칭이 가능합니다.' },
+    },
+    mid: {
+      fast:    { icon:'⚡', title:'과속 감량 주의', body:'지방 연소 최적 구간이지만 너무 빠르게 빠지고 있습니다. 탄수화물 100~200kcal를 추가하고 운동 강도를 약간 낮추세요. 근육을 지켜야 장기 감량이 가능합니다.' },
+      optimal: { icon:'🏆', title:'완벽한 상태!', body:'중간 농도 + 이상적 감량 속도 — 지방 연소의 최적 조건입니다. 현재 운동·식단을 그대로 유지하세요. 이 흐름이 가장 좋습니다.' },
+      slow:    { icon:'⚠️', title:'운동량 늘려야 할 때', body:'중간 농도 구간에서 최대 효율을 내지 못하고 있습니다. 유산소 시간을 10~15분 늘리거나 빈도를 1회 더 추가하세요. 탄수화물 섭취량을 점검하세요.' },
+      plateau: { icon:'⏸', title:'루틴 변화 시도', body:'식단과 운동 루틴에 몸이 적응했을 수 있습니다. 운동 종류를 바꾸거나 간헐적 단식(16:8)을 1~2주 시도해보세요.' },
+      gaining: { icon:'🚨', title:'식단 즉시 점검', body:'중간 농도임에도 체중이 증가 중입니다. 식단 일지 작성을 시작하고 숨겨진 고칼로리 요인을 찾으세요. 운동량을 유지하면서 저녁 탄수화물을 크게 줄이세요.' },
+      unknown: { icon:'ℹ️', title:'체중 기록 필요', body:'지금이 지방 연소 최적 구간입니다. 체중을 기록하면 얼마나 잘 되고 있는지 정확히 알 수 있습니다.' },
+    },
+    low: {
+      fast:    { icon:'⚡', title:'저농도 과속 감량 주의', body:'약효가 줄어들며 식욕이 돌아오는 구간에서 과속 감량 중입니다. 단백질 섭취(×2.0g/kg)를 최우선으로 하고, 근력 운동으로 근육을 지키세요.' },
+      optimal: { icon:'✅', title:'좋은 흐름 유지', body:'저농도 구간에서도 이상적으로 감량 중입니다. 식욕이 회복될 수 있으니 식단 기록을 꼼꼼히 유지하고 현재 운동 강도를 이어가세요.' },
+      slow:    { icon:'⚠️', title:'식욕 관리 필요', body:'약효가 줄어드는 구간에서 감량도 느려졌습니다. 식욕이 회복되고 있을 가능성이 높습니다. HIIT나 고강도 운동을 추가하고 저녁 식사량을 줄이세요.' },
+      plateau: { icon:'⏸', title:'저농도 정체 — 식단 강화', body:'저농도 + 정체 조합은 식욕 회복으로 칼로리를 보충하고 있을 가능성이 큽니다. 식단 일지를 바로 시작하고 운동 강도를 최대로 높이세요.' },
+      gaining: { icon:'🚨', title:'식욕 폭발 주의', body:'저농도 구간의 "푸드 노이즈"가 작동 중일 가능성이 높습니다. 오늘 당장 식단 일지를 시작하고, 야식과 고칼로리 음료를 완전히 차단하세요.' },
+      unknown: { icon:'ℹ️', title:'체중 기록이 중요한 구간', body:'저농도는 식욕이 회복되는 위험한 구간입니다. 체중을 자주 측정하면 빠른 대처가 가능합니다.' },
+    },
+  };
+
+  const msg = COACHING[zone]?.[wRate.rate] || COACHING[zone]?.unknown;
+
+  // Stats row
+  const weeklyStr = wRate.weeklyKg !== null
+    ? `${wRate.weeklyKg <= 0 ? '▼' : '▲'} ${Math.abs(wRate.weeklyKg).toFixed(2)} kg/주`
+    : '기록 없음';
+  const weeklyColor = wRate.weeklyKg === null ? 'var(--gray-400)' : wRate.weeklyKg <= -0.5 ? '#059669' : wRate.weeklyKg < 0 ? '#d97706' : '#dc2626';
+
+  content.innerHTML = `
+    <div class="coaching-grid">
+      <div class="coaching-stat">
+        <div class="coaching-stat-val" style="color:${zm.color}">${concPct}<span style="font-size:12px;font-weight:500">%</span></div>
+        <div class="coaching-stat-label">잔류농도 (정상피크 대비)</div>
+      </div>
+      <div class="coaching-stat">
+        <div class="coaching-stat-val" style="color:${weeklyColor}">${weeklyStr}</div>
+        <div class="coaching-stat-label">최근 감량 속도</div>
+      </div>
+    </div>
+    <div class="coaching-action" style="background:${zm.bg};color:${zm.color}">
+      <div class="coaching-action-title">${msg.icon} ${msg.title}</div>
+      <div class="coaching-action-body">${msg.body}</div>
+    </div>`;
+}
+
 // ─── Weekly exercise goal ──────────────────────────────
 function renderWeeklyExerciseGoal() {
   const el = document.getElementById('exercise-goal-content');
   if (!el) return;
 
+  // Dynamic goal based on concentration zone
+  const zoneInfo = calcConcentrationZone();
+  const goal = zoneInfo ? (zoneInfo.zone === 'peak' ? 3 : zoneInfo.zone === 'low' ? 5 : 4) : 4;
+  const targetLabel = document.getElementById('exercise-goal-target-label');
+  if (targetLabel) targetLabel.textContent = `주 ${goal}회 목표`;
+
   const count = getWeeklyExerciseCount();
-  const goal = 4;
   const pct = Math.min(count / goal, 1);
   const r = 38, cx = 50, cy = 50;
   const circumference = 2 * Math.PI * r;
   const dashOffset = circumference * (1 - pct);
-  const color = count >= goal ? '#10b981' : count >= 2 ? '#4f46e5' : '#f59e0b';
+  const color = count >= goal ? '#10b981' : count >= Math.ceil(goal / 2) ? '#4f46e5' : '#f59e0b';
+
+  const goalNote = zoneInfo
+    ? { peak: '고농도: 회복 우선 (주 3회)', mid: '중간농도: 최적 운동량 (주 4회)', low: '저농도: 강도 높게 (주 5회)' }[zoneInfo.zone]
+    : '';
 
   el.innerHTML = `
     <div class="goal-ring-wrap">
@@ -2463,83 +2718,144 @@ function renderWeeklyExerciseGoal() {
       </svg>
       <div class="goal-ring-label">이번 주 운동 횟수</div>
     </div>
-    <div style="text-align:center;font-size:12px;padding:4px 0 2px;${count >= goal ? 'color:#10b981;font-weight:600' : 'color:var(--gray-500)'}">
+    <div style="text-align:center;font-size:12px;padding:2px 0;${count >= goal ? 'color:#10b981;font-weight:600' : 'color:var(--gray-500)'}">
       ${count >= goal ? '🎉 이번 주 목표 달성!' : `목표까지 ${goal - count}회 남았습니다`}
-    </div>`;
+    </div>
+    ${goalNote ? `<div style="margin-top:6px;text-align:center;font-size:10px;color:var(--gray-400)">${goalNote}</div>` : ''}`;
 }
 
 // ─── Diet analysis ────────────────────────────────────
 function renderDietAnalysis() {
   const el = document.getElementById('diet-analysis-content');
+  const rateBadgeEl = document.getElementById('diet-rate-badge');
   if (!el) return;
 
   if (injections.length === 0) {
     el.innerHTML = `<div class="empty-state" style="padding:20px"><div class="empty-icon">🥗</div><p>주사 기록을 추가하면 식단 가이드가 표시됩니다</p></div>`;
+    if (rateBadgeEl) rateBadgeEl.style.display = 'none';
     return;
   }
 
   const zoneInfo = calcConcentrationZone();
   if (!zoneInfo) {
     el.innerHTML = `<div class="empty-state" style="padding:20px"><div class="empty-icon">🥗</div><p>주사 기록을 추가하면 식단 가이드가 표시됩니다</p></div>`;
+    if (rateBadgeEl) rateBadgeEl.style.display = 'none';
     return;
   }
 
-  const dietGuide = {
-    peak: {
-      title: '고농도 구간 식단 전략', color: '#dc2626', bg: '#fee2e2',
-      tips: [
-        { icon: '🥩', text: '단백질 우선 섭취: 체중 1kg당 1.6g 이상을 목표로 근손실을 방지하세요.' },
-        { icon: '🥦', text: '소화 부담 적은 채소와 저지방 단백질(닭가슴살, 두부, 계란)을 중심으로 구성하세요.' },
-        { icon: '⚡', text: '식욕 저하 시에도 단백질 쉐이크 등으로 단백질 목표를 채우세요.' },
-      ],
-      note: '이 구간은 오심이 올 수 있습니다. 소량씩 자주 드세요.',
-    },
-    mid: {
-      title: '중간 농도 구간 식단 전략', color: '#059669', bg: '#d1fae5',
-      tips: [
-        { icon: '🥗', text: '영양 밀도 높은 식단: 채소, 통곡물, 저지방 단백질 조합이 이상적입니다.' },
-        { icon: '🍎', text: '혈당 스파이크를 방지하는 저GI 식품을 선택하세요 (현미, 고구마, 사과 등).' },
-        { icon: '💧', text: '하루 1.5~2L 수분 섭취로 대사를 유지하세요.' },
-      ],
-      note: '지방 연소에 가장 효율적인 구간입니다. 과도한 칼로리 제한은 오히려 근손실을 유발합니다.',
-    },
-    low: {
-      title: '저농도 구간 식단 전략', color: '#d97706', bg: '#fef3c7',
-      tips: [
-        { icon: '🍽️', text: '식욕이 회복되는 구간입니다. 식사 전 물 한 잔으로 과식을 방지하세요.' },
-        { icon: '🥜', text: '포만감 있는 고섬유질 식품(견과류, 콩류, 브로콜리)으로 과식 충동을 조절하세요.' },
-        { icon: '📝', text: '식단 일지를 꼼꼼히 기록하여 과식 패턴을 파악하세요.' },
-      ],
-      note: '식욕이 돌아오는 구간입니다. "보상 심리"로 인한 과식을 경계하세요.',
-    },
-  };
+  const wRate   = calcWeightLossRate();
+  const bw      = userProfile.targetWeight || (weights.length > 0 ? weights[weights.length - 1].value : null);
+  const currBw  = weights.length > 0 ? weights[weights.length - 1].value : null;
 
-  const g = dietGuide[zoneInfo.zone];
-
-  let speedHtml = '';
-  if (weights.length >= 2) {
-    const r = calcDoseOptimization();
-    if (r && r.weightSlope !== null) {
-      const weekly = r.weightSlope * 7;
-      const speedColor = weekly <= -0.3 ? '#10b981' : weekly <= 0 ? '#f59e0b' : '#ef4444';
-      speedHtml = `
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--gray-50);border-radius:8px;margin-bottom:10px">
-          <div style="font-size:12px;color:var(--gray-500)">최근 체중 감소 속도</div>
-          <div style="font-size:14px;font-weight:700;color:${speedColor}">${weekly <= 0 ? '▼' : '▲'} ${Math.abs(weekly).toFixed(2)} kg/주</div>
-        </div>`;
-    }
+  // ─ Weight rate badge in card header ─────────────────
+  if (rateBadgeEl && wRate.rate !== 'unknown') {
+    const rLabels = { fast:'과속 감량', optimal:'이상적 감량', slow:'감량 느림', plateau:'정체', gaining:'체중 증가' };
+    rateBadgeEl.textContent = rLabels[wRate.rate] || '';
+    rateBadgeEl.className = `rate-badge ${wRate.rate}`;
+    rateBadgeEl.style.display = '';
+  } else if (rateBadgeEl) {
+    rateBadgeEl.style.display = 'none';
   }
 
-  el.innerHTML = `${speedHtml}
-    <div style="padding:12px;background:${g.bg};border-radius:8px;margin-bottom:10px">
-      <div style="font-size:12px;font-weight:700;color:${g.color};margin-bottom:10px">${g.title}</div>
-      ${g.tips.map(t => `<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px">
-        <span style="font-size:16px;flex-shrink:0">${t.icon}</span>
+  // ─ Nutrition targets based on current weight ─────────
+  let targetHtml = '';
+  if (currBw) {
+    // Protein: rate-adjusted (fast→2.0g/kg, optimal→1.8g, slow/plateau/gaining→1.6g)
+    const proteinMult = wRate.rate === 'fast' ? 2.0 : wRate.rate === 'optimal' ? 1.8 : 1.6;
+    const proteinG    = Math.round(currBw * proteinMult);
+
+    // Calorie estimate: rough TDEE × adjustment by rate
+    // Base: ~25 kcal/kg (sedentary), + exercise factor
+    const baseCal = Math.round(currBw * 25);
+    const calAdj  = wRate.rate === 'fast' ? 200 : wRate.rate === 'slow' ? -150 : wRate.rate === 'plateau' ? -200 : wRate.rate === 'gaining' ? -300 : 0;
+    const targetCal = baseCal + calAdj;
+
+    // Water: 35ml/kg
+    const waterL = (currBw * 35 / 1000).toFixed(1);
+
+    const calColor = calAdj < 0 ? '#dc2626' : calAdj > 0 ? '#059669' : 'var(--gray-900)';
+    const calNote  = calAdj > 0 ? '(+증량)' : calAdj < 0 ? '(감량)' : '';
+
+    targetHtml = `
+      <div class="diet-targets-row">
+        <div class="diet-target">
+          <div class="diet-target-val" style="color:#dc2626">${proteinG}<span class="diet-target-unit">g</span></div>
+          <div class="diet-target-label">단백질/일</div>
+        </div>
+        <div class="diet-target">
+          <div class="diet-target-val" style="color:${calColor}">${targetCal}<span class="diet-target-unit">kcal</span></div>
+          <div class="diet-target-label">목표칼로리 ${calNote}</div>
+        </div>
+        <div class="diet-target">
+          <div class="diet-target-val" style="color:#0369a1">${waterL}<span class="diet-target-unit">L</span></div>
+          <div class="diet-target-label">수분/일</div>
+        </div>
+      </div>`;
+  }
+
+  // ─ Rate-specific advisory ────────────────────────────
+  const rateAdvisory = {
+    fast:    { color: '#0369a1', bg: '#e0f2fe', icon: '⚡', title: '과속 감량 — 칼로리를 약간 늘리세요',
+               text: '주 1kg 이상 감량은 근손실 위험이 큽니다. 단백질을 먼저 늘리고, 탄수화물 200~300kcal를 추가하세요. 식욕 억제가 강하더라도 단백질 목표는 반드시 채우세요.' },
+    optimal: { color: '#059669', bg: '#d1fae5', icon: '✅', title: '이상적 감량 속도 — 현재 식단을 유지하세요',
+               text: '주 0.5~1kg 감량은 근손실 없이 지방을 빼는 최적 속도입니다. 단백질·수분 목표를 꾸준히 유지하세요.' },
+    slow:    { color: '#b45309', bg: '#fef3c7', icon: '⚠️', title: '감량 속도 느림 — 칼로리 소모를 높이세요',
+               text: '식단 칼로리를 100~150kcal 줄이거나, 운동량을 늘리세요. 탄수화물·지방 섭취를 점검하고 단백질 비중을 높여 포만감을 유지하세요.' },
+    plateau: { color: '#6b7280', bg: '#f3f4f6', icon: '⏸', title: '체중 정체 — 식단 변화가 필요합니다',
+               text: '같은 식단이 오래되면 대사 적응이 생깁니다. 칼로리를 200kcal 줄이거나, 2주간 식단 구성(탄·단·지 비율)을 바꿔보세요. 저녁 탄수화물을 줄이는 것이 효과적입니다.' },
+    gaining: { color: '#dc2626', bg: '#fee2e2', icon: '🚨', title: '체중 증가 — 즉시 식단 점검 필요',
+               text: '약효가 있음에도 증가한다면 과식이나 야식, 고칼로리 음료가 원인일 수 있습니다. 오늘부터 식단 일지를 기록하고, 저녁 식사량을 줄이세요.' },
+  };
+  const rAdv = rateAdvisory[wRate.rate];
+
+  // ─ Zone-specific tips ───────────────────────────────
+  const ZONE_TIPS = {
+    peak: {
+      color: '#dc2626', bg: '#fee2e2', icon: '🔴', title: '고농도 구간 식단 전략',
+      tips: [
+        { icon: '🥩', text: '단백질 우선: 소화 부담 적은 닭가슴살·두부·계란·단백질 쉐이크로 목표량을 채우세요.' },
+        { icon: '🍲', text: '소량씩 자주(4~5회) 드세요. 오심이 심할 때는 차가운 단백질 음료가 도움됩니다.' },
+        { icon: '🚫', text: '기름진 음식·고지방 식품은 오심을 악화시킵니다. 피하세요.' },
+      ],
+      note: '식욕 저하가 심해도 단백질 목표는 반드시 채워야 근손실을 막을 수 있습니다.',
+    },
+    mid: {
+      color: '#059669', bg: '#d1fae5', icon: '🟢', title: '중간 농도 구간 식단 전략',
+      tips: [
+        { icon: '🥗', text: '영양 밀도 높은 식사: 채소 + 통곡물 + 저지방 단백질 조합이 이상적입니다.' },
+        { icon: '🍎', text: '저GI 탄수화물(현미·고구마·사과)으로 혈당 안정과 지방 연소를 동시에 잡으세요.' },
+        { icon: '💧', text: '하루 목표 수분을 꾸준히 섭취해 신진대사를 유지하세요.' },
+      ],
+      note: '지방 연소에 가장 유리한 구간. 과도한 칼로리 제한은 오히려 근손실을 유발합니다.',
+    },
+    low: {
+      color: '#d97706', bg: '#fef3c7', icon: '🟡', title: '저농도 구간 식단 전략',
+      tips: [
+        { icon: '🍽️', text: '식사 전 물 한 잔(250ml)으로 식욕을 조절하세요. 천천히 드시면 포만감이 일찍 옵니다.' },
+        { icon: '🥜', text: '고섬유질 식품(브로콜리·콩류·견과류)으로 포만감을 오래 유지하세요.' },
+        { icon: '📝', text: '식단 일지를 꼼꼼히 기록하세요. "보상 심리" 과식이 가장 위험한 구간입니다.' },
+      ],
+      note: '약효가 약해지는 구간. 식단 관리가 결과를 좌우합니다.',
+    },
+  };
+  const zTip = ZONE_TIPS[zoneInfo.zone];
+
+  el.innerHTML = `
+    ${targetHtml}
+    ${rAdv ? `
+    <div style="padding:10px 12px;background:${rAdv.bg};border-radius:9px;margin-bottom:10px;border-left:3px solid ${rAdv.color}">
+      <div style="font-size:11px;font-weight:700;color:${rAdv.color};margin-bottom:4px">${rAdv.icon} ${rAdv.title}</div>
+      <div style="font-size:12px;color:var(--gray-700);line-height:1.55">${rAdv.text}</div>
+    </div>` : ''}
+    <div style="padding:10px 12px;background:${zTip.bg};border-radius:9px;margin-bottom:10px">
+      <div style="font-size:11px;font-weight:700;color:${zTip.color};margin-bottom:8px">${zTip.icon} ${zTip.title}</div>
+      ${zTip.tips.map(t => `<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:6px">
+        <span style="font-size:14px;flex-shrink:0">${t.icon}</span>
         <div style="font-size:12px;color:var(--gray-700);line-height:1.5">${t.text}</div>
       </div>`).join('')}
     </div>
-    <div style="padding:8px 10px;background:white;border:1px solid ${g.color}44;border-radius:8px;font-size:11px;color:var(--gray-500);line-height:1.5">
-      💡 ${g.note}
+    <div style="padding:8px 10px;background:white;border:1px solid ${zTip.color}44;border-radius:8px;font-size:11px;color:var(--gray-500);line-height:1.5">
+      💡 ${zTip.note}
     </div>`;
 }
 
@@ -2551,6 +2867,7 @@ function renderAll() {
   renderDoseOptimization();
   renderExerciseCard();
   renderTimeline();
+  renderIntegratedCoaching();
   renderWeeklyExerciseGoal();
   renderDietAnalysis();
   renderTeam();
