@@ -33,7 +33,10 @@
     --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
   }
 
-  html { height: 100%; }
+  html {
+    height: 100dvh; /* dvh 기준으로 체인 시작 */
+    height: 100%;   /* 폴백 */
+  }
 
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -68,8 +71,7 @@
   .app-shell {
     display: flex;
     flex-direction: column;
-    height: 100vh;   /* fallback for older browsers */
-    height: 100dvh;  /* dynamic viewport height (hides browser chrome) */
+    height: 100%; /* html→body→app-shell 100% 체인: dvh 기준으로 일관성 유지 */
     max-width: 480px;
     margin: 0 auto;
     overflow: hidden;
@@ -101,8 +103,8 @@
     display: flex;
     background: white;
     border-top: 1px solid var(--gray-200);
-    padding: 4px 0;
-    padding-bottom: max(4px, env(safe-area-inset-bottom));
+    padding: 2px 0 0;
+    padding-bottom: env(safe-area-inset-bottom);
   }
   .nav-btn {
     flex: 1;
