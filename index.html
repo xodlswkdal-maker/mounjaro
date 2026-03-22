@@ -1665,11 +1665,13 @@ function ccHomeInit() {
   CC_HOME.ctx = CC_HOME.el.getContext('2d');
   CC_HOME.dpr = Math.min(window.devicePixelRatio || 1, 2);
 
-  // canvas는 CSS width:100%;height:100% 으로 chart-canvas-wrap(flex:1)을 채움
-  // offsetWidth/Height로 실제 CSS px 크기를 직접 읽어 buffer 크기를 설정
-  const cssW = Math.max(220, CC_HOME.el.offsetWidth || 340);
-  const cssH = Math.max(150, CC_HOME.el.offsetHeight || Math.round(cssW * 0.55));
+  // chart-canvas-wrap(flex:1)의 실제 크기에서 치수를 읽어 canvas에 명시적 지정
+  const wrap = document.getElementById('chart-canvas-wrap');
+  const cssW = Math.max(220, wrap ? wrap.clientWidth  : (CC_HOME.el.offsetWidth  || 340));
+  const cssH = Math.max(150, wrap ? wrap.clientHeight : (CC_HOME.el.offsetHeight || Math.round(cssW * 0.55)));
 
+  CC_HOME.el.style.width  = cssW + 'px';
+  CC_HOME.el.style.height = cssH + 'px';
   CC_HOME.el.width  = Math.round(cssW * CC_HOME.dpr);
   CC_HOME.el.height = Math.round(cssH * CC_HOME.dpr);
   CC_HOME.W = cssW; CC_HOME.H = cssH;
@@ -2124,7 +2126,7 @@ function renderDrugLevel() {
       <span style="font-size:13px;font-weight:700;color:var(--gray-700)"> Report</span>
     </div>
     <div id="chart-canvas-wrap" style="flex:1;min-height:0;overflow:hidden">
-      <canvas id="combo-chart-home" class="chart-canvas" style="width:100%;height:100%"></canvas>
+      <canvas id="combo-chart-home" class="chart-canvas"></canvas>
     </div>
     <div class="chart-legend" style="flex-shrink:0;margin-top:6px;margin-bottom:8px">
       <div class="legend-item"><div style="width:16px;height:2px;background:#6366f1;border-radius:1px"></div>잔류 농도</div>
