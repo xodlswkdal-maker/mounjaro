@@ -1156,7 +1156,10 @@
     <!-- 종합 코칭 카드 (농도 + 감량 속도 통합) -->
     <div class="card" id="integrated-coaching-card" style="display:none">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div class="card-title" style="margin-bottom:0">오늘의 종합 코칭</div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div class="card-title" style="margin-bottom:0">오늘의 종합 코칭</div>
+          <button class="info-btn" onclick="showInfoSheet('coaching')">?</button>
+        </div>
         <span id="coaching-status-badge" class="coaching-badge"></span>
       </div>
       <div id="integrated-coaching-content"></div>
@@ -1189,7 +1192,10 @@
     <!-- 식단 + 영양 가이드 -->
     <div class="card" id="diet-analysis-card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div class="card-title" style="margin-bottom:0">식단 · 영양 가이드</div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div class="card-title" style="margin-bottom:0">식단 · 영양 가이드</div>
+          <button class="info-btn" onclick="showInfoSheet('diet')">?</button>
+        </div>
         <span id="diet-rate-badge" class="rate-badge unknown" style="display:none"></span>
       </div>
       <div id="diet-analysis-content">
@@ -1213,8 +1219,9 @@
         </div>
         <div class="protein-quick-row">
           <input type="number" id="protein-input" placeholder="섭취량 (g)" min="0" max="300"
-            style="flex:1;padding:8px 10px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:13px">
-          <button class="btn btn-primary" style="flex-shrink:0" onclick="logProtein()">기록</button>
+            style="flex:1;min-width:0;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:14px">
+          <button onclick="logProtein()"
+            style="flex-shrink:0;width:auto;padding:10px 18px;background:var(--primary);color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">기록</button>
         </div>
       </div>
     </div>
@@ -2578,7 +2585,10 @@ function renderExerciseCard() {
 
   card.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <div class="card-title" style="margin-bottom:0">오늘의 운동 추천</div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <div class="card-title" style="margin-bottom:0">오늘의 운동 추천</div>
+        <button class="info-btn" onclick="showInfoSheet('exercise')">?</button>
+      </div>
       <div style="display:flex;align-items:center;gap:5px">
         ${rateBadge}
         <span class="zone-pill ${r.zone}">${r.icon} ${r.label}</span>
@@ -2695,7 +2705,71 @@ function renderExercisePage() {
 }
 
 // ─── Info sheet ───────────────────────────────────────
-function showInfoSheet() {
+const INFO_SHEETS = {
+  'dose-opt': {
+    title: '투여 최적화 지표란?',
+    rows: [
+      { color: '#10b981', name: '복약 순응도 (Adherence)',
+        desc: '정해진 주사 주기를 얼마나 정확히 지켰는지를 나타냅니다. 계획된 날짜에 투여할수록 100%에 가까워지며, 꾸준한 투여가 약효 유지의 기본입니다.' },
+      { color: '#6366f1', name: '농도 충분도 η (Concentration Adequacy)',
+        desc: '다음 투여 직전 예상 잔류 농도가 목표 골(trough) 농도 대비 얼마나 되는지를 나타냅니다. η ≥ 0.85이면 체중 감소 효과를 유지하기에 충분합니다.' },
+    ],
+    footer: '지표가 높을수록 체중 감량 효율이 높아집니다',
+  },
+  'diet': {
+    title: '식단 가이드 의학적 근거',
+    rows: [
+      { color: '#dc2626', name: '단백질 목표 (1.2–1.6 g/kg · AACE/ACE 2023)',
+        desc: 'AACE/ACE 2023 비만치료 가이드라인 및 Philip et al.(2023, Obesity Reviews) 기반. 칼로리 제한 시 근육 보존을 위해 1.2–1.6 g/kg 권고. 2.0 g/kg 초과는 비만 환자에서 신장 부담 증가 대비 추가 효과가 증명되지 않음 (ESPEN 2023). 감량 속도가 빠를수록 상한치(1.6 g/kg) 적용.' },
+      { color: '#059669', name: '목표 칼로리 (Mifflin-St Jeor 공식)',
+        desc: 'Mifflin MD et al.(1990, JADA)이 제안한 공식으로 기초대사율(BMR)을 산출한 뒤 신체활동계수(PAL) 적용. 감량 속도에 따라 −150~−300 kcal 보정. 현재까지 BMR 예측 공식 중 가장 높은 정확도를 인정받음 (Frankenfield D et al. 2005).' },
+      { color: '#0369a1', name: '수분 목표 (35 ml/kg · WHO 기준)',
+        desc: 'WHO 및 대한비만학회 일일 수분 섭취 권고(35 ml/kg). Tirzepatide의 주요 부작용인 오심·구토로 인한 탈수 위험이 높아 충분한 수분 섭취가 특히 중요합니다 (SURMOUNT-1, Jastreboff AM et al. NEJM 2022).' },
+    ],
+    footer: '수치는 참고용이며 개인 상태에 따라 의료진과 조정하세요',
+  },
+  'exercise': {
+    title: '운동 추천 의학적 근거',
+    rows: [
+      { color: '#6366f1', name: '약물 농도 구간별 강도 조절 (GLP-1/GIP PK/PD)',
+        desc: 'Tirzepatide의 약역학(PK/PD) 특성상 고농도 구간에서 오심·피로 부작용 발생률이 높아집니다. SURMOUNT-1 임상(Jastreboff AM et al. NEJM 2022)에서 고강도 운동 시 부작용 악화 보고 → 농도 구간별 강도 조절 필요.' },
+      { color: '#10b981', name: '유산소 + 근력 병행 권고 (ACSM 가이드라인)',
+        desc: 'ACSM 비만 운동 가이드라인(Donnelly JE et al. 2009, Med Sci Sports Exerc): 주 150~300분 중강도 유산소 + 주 2회 이상 근력운동 병행 시 체지방 감소 및 근육 보존 효과 극대화. GLP-1 계열 약물 사용 시 근손실 위험 증가로 근력운동 비중이 더 중요합니다.' },
+      { color: '#f59e0b', name: '운동 빈도 기준 (WHO 2020)',
+        desc: 'WHO Physical Activity Guidelines 2020: 성인 주당 150~300분 중강도 또는 75~150분 고강도 유산소 권고. 체중 감량 목적 시 상한선(300분) 접근을 권고하며, HIIT는 동일 효과를 짧은 시간에 달성합니다.' },
+    ],
+    footer: '부작용 발생 시 강도를 낮추고 의료진과 상담하세요',
+  },
+  'coaching': {
+    title: '종합 코칭 의학적 근거',
+    rows: [
+      { color: '#6366f1', name: '농도 구간 × 감량 속도 매트릭스 (PK/PD 모델)',
+        desc: '1-compartment 1st-order absorption 모델로 계산된 잔류농도 구간(고·중·저)과 최근 4주 체중 변화 속도를 교차 분석하여 18가지 조합별 최적 행동 전략을 제시합니다.' },
+      { color: '#dc2626', name: '과속 감량 위험 기준 (Stiegler & Cunliffe 2006)',
+        desc: 'Stiegler P & Cunliffe A (Sports Medicine, 2006): 주 체중의 1% 초과 감량 시 제지방(근육) 손실 비율이 유의미하게 증가. 본 앱은 주 −1 kg 초과를 "과속" 경보 기준으로 적용합니다.' },
+      { color: '#10b981', name: '이상적 감량 속도 (AACE/ACE 2023)',
+        desc: 'AACE/ACE 2023 비만치료 가이드라인: 주 0.5~1.0 kg 감량(체중의 약 0.5~1%)이 지방 선택적 감소 및 근육 보존에 최적. 이 속도가 "이상적 감량(optimal)" 구간의 기준입니다.' },
+    ],
+    footer: '본 분석은 참고용이며 최종 판단은 의료진과 상의하세요',
+  },
+};
+
+function showInfoSheet(type = 'dose-opt') {
+  const data = INFO_SHEETS[type];
+  if (!data) return;
+  const rowsHtml = data.rows.map(r => `
+    <div class="sheet-metric-row">
+      <div class="metric-dot" style="background:${r.color}"></div>
+      <div>
+        <div class="sheet-metric-name">${r.name}</div>
+        <div class="sheet-metric-desc">${r.desc}</div>
+      </div>
+    </div>`).join('');
+  document.getElementById('info-sheet').innerHTML = `
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">${data.title}</div>
+    ${rowsHtml}
+    ${data.footer ? `<div class="sheet-footer">${data.footer}</div>` : ''}`;
   document.getElementById('info-sheet-overlay').classList.add('open');
 }
 function closeInfoSheet(e) {
@@ -2913,7 +2987,7 @@ function renderIntegratedCoaching() {
   // 2D coaching message matrix
   const COACHING = {
     peak: {
-      fast:    { icon:'🆘', title:'근손실 경보', body:'고농도·과속 감량의 최악 조합입니다. 지금 당장 칼로리를 200~300kcal 늘리고 단백질(×2.0g/kg)을 최우선으로 채우세요. 운동은 최소한으로만.' },
+      fast:    { icon:'🆘', title:'근손실 경보', body:'고농도·과속 감량의 최악 조합입니다. 지금 당장 칼로리를 200~300kcal 늘리고 단백질(1.6g/kg)을 최우선으로 채우세요. 운동은 최소한으로만.' },
       optimal: { icon:'✅', title:'이상적 상태', body:'고농도 구간에서 적절히 감량 중입니다. 가벼운 운동 + 단백질 집중 섭취를 유지하면서 현재 흐름을 이어가세요.' },
       slow:    { icon:'⚠️', title:'감량 속도 점검', body:'고농도임에도 감량이 느립니다. 식사량(특히 지방·정제 탄수화물)을 점검하고 저녁 식사를 줄여보세요. 부작용으로 무기력하다면 쉬운 걷기라도 유지하세요.' },
       plateau: { icon:'⏸', title:'정체 극복 필요', body:'고농도 구간인데 체중이 멈췄습니다. 식단 기록을 시작하고 숨겨진 칼로리(음료·간식)를 찾아보세요. 의료진과 용량 조정을 상의할 시점일 수 있습니다.' },
@@ -2929,7 +3003,7 @@ function renderIntegratedCoaching() {
       unknown: { icon:'ℹ️', title:'체중 기록 필요', body:'지금이 지방 연소 최적 구간입니다. 체중을 기록하면 얼마나 잘 되고 있는지 정확히 알 수 있습니다.' },
     },
     low: {
-      fast:    { icon:'⚡', title:'저농도 과속 감량 주의', body:'약효가 줄어들며 식욕이 돌아오는 구간에서 과속 감량 중입니다. 단백질 섭취(×2.0g/kg)를 최우선으로 하고, 근력 운동으로 근육을 지키세요.' },
+      fast:    { icon:'⚡', title:'저농도 과속 감량 주의', body:'약효가 줄어들며 식욕이 돌아오는 구간에서 과속 감량 중입니다. 단백질 섭취(1.6g/kg)를 최우선으로 하고, 근력 운동으로 근육을 지키세요.' },
       optimal: { icon:'✅', title:'좋은 흐름 유지', body:'저농도 구간에서도 이상적으로 감량 중입니다. 식욕이 회복될 수 있으니 식단 기록을 꼼꼼히 유지하고 현재 운동 강도를 이어가세요.' },
       slow:    { icon:'⚠️', title:'식욕 관리 필요', body:'약효가 줄어드는 구간에서 감량도 느려졌습니다. 식욕이 회복되고 있을 가능성이 높습니다. HIIT나 고강도 운동을 추가하고 저녁 식사량을 줄이세요.' },
       plateau: { icon:'⏸', title:'저농도 정체 — 식단 강화', body:'저농도 + 정체 조합은 식욕 회복으로 칼로리를 보충하고 있을 가능성이 큽니다. 식단 일지를 바로 시작하고 운동 강도를 최대로 높이세요.' },
@@ -3070,8 +3144,11 @@ function renderDietAnalysis() {
   // ─ Nutrition targets based on current weight ─────────
   let targetHtml = '';
   if (currBw) {
-    // Protein: rate-adjusted (fast→2.0g/kg, optimal→1.8g, slow/plateau/gaining→1.6g)
-    const proteinMult = wRate.rate === 'fast' ? 2.0 : wRate.rate === 'optimal' ? 1.8 : 1.6;
+    // Protein: rate-adjusted (fast→1.6g/kg, optimal→1.4g/kg, slow/plateau/gaining→1.2g/kg)
+    // AACE/ACE 2023 비만치료 가이드라인 기반: 칼로리 제한 중 근육 보존을 위해
+    // 감량 속도에 따라 1.2–1.6 g/kg 적용 (Philip et al. 2023, Obesity Reviews)
+    // 2.0 g/kg 이상은 비만 환자에게 신장 부담 증가·추가 효과 미증명 (ESPEN 2023)
+    const proteinMult = wRate.rate === 'fast' ? 1.6 : wRate.rate === 'optimal' ? 1.4 : 1.2;
     const proteinG    = Math.round(currBw * proteinMult);
 
     // Calorie estimate: Mifflin-St Jeor if height available, else weight-based fallback
@@ -3098,6 +3175,10 @@ function renderDietAnalysis() {
     const calNote  = calAdj > 0 ? '(+증량)' : calAdj < 0 ? '(감량)' : '';
 
     targetHtml = `
+      <div style="display:flex;align-items:center;gap:5px;margin-bottom:6px">
+        <div style="font-size:11px;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:0.05em">오늘의 목표 수치</div>
+        <button class="info-btn" onclick="showInfoSheet('diet')">?</button>
+      </div>
       <div class="diet-targets-row">
         <div class="diet-target">
           <div class="diet-target-val" style="color:#dc2626">${proteinG}<span class="diet-target-unit">g</span></div>
@@ -3182,7 +3263,7 @@ function renderDietAnalysis() {
   // ─ Protein log progress ──────────────────────────────
   const proteinSec = document.getElementById('protein-log-section');
   if (proteinSec && currBw) {
-    const proteinMult2 = wRate.rate === 'fast' ? 2.0 : wRate.rate === 'optimal' ? 1.8 : 1.6;
+    const proteinMult2 = wRate.rate === 'fast' ? 1.6 : wRate.rate === 'optimal' ? 1.4 : 1.2;
     const proteinTarget = Math.round(currBw * proteinMult2);
     const todayStr = new Date().toISOString().slice(0, 10);
     const todayEntry = proteinLogs.find(p => p.date === todayStr);
