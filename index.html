@@ -94,7 +94,7 @@
   .nav-btn:hover:not(.active) { background: var(--gray-100); color: var(--gray-700); }
 
   /* Layout */
-  .main { max-width: 480px; margin: 0 auto; padding: 16px 16px 80px; }
+  .main { max-width: 480px; margin: 0 auto; padding: 16px 16px calc(80px + env(safe-area-inset-bottom)); }
   .section { display: none; }
   .section.active { display: block; }
 
@@ -467,7 +467,7 @@
   .sheet-overlay.open { opacity: 1; pointer-events: auto; }
   .bottom-sheet {
     background: white; border-radius: 20px 20px 0 0;
-    padding: 16px 20px 32px; width: 100%; max-width: 480px;
+    padding: 16px 20px calc(32px + env(safe-area-inset-bottom)); width: 100%; max-width: 480px;
     transform: translateY(100%);
     transition: transform 0.3s cubic-bezier(0.32,0.72,0,1);
     max-height: 75vh; overflow-y: auto;
@@ -555,7 +555,7 @@
   <div class="section active" id="tab-home">
 
     <!-- 통합 카드: 농도·체중 그래프 + 잔류 농도 + 체중 변화 -->
-    <div class="card" id="home-chart-card" style="padding:14px;min-height:50vh">
+    <div class="card" id="home-chart-card" style="padding:14px;min-height:44vh">
       <div style="text-align:center;padding:20px 0;color:var(--gray-500);font-size:13px">
         <div style="font-size:32px;margin-bottom:8px">🧪</div>
         주사 기록을 추가하면 통합 정보가 표시됩니다
@@ -710,6 +710,29 @@
     </div>
 
     <!-- 데이터 관리 -->
+    <div class="card" style="margin-top:4px">
+      <div class="card-title">알림 설정</div>
+      <p style="font-size:13px;color:var(--gray-500);margin-bottom:12px">앱을 열 때 투약 및 농도 기반 알림을 받을 수 있습니다.</p>
+      <div id="notif-permission-banner" style="display:none;background:var(--primary-light);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:13px;color:var(--primary)">
+        알림 권한이 필요합니다.
+        <button class="btn btn-primary" style="margin-top:6px;width:100%;justify-content:center" onclick="requestNotifPermission()">알림 권한 허용</button>
+      </div>
+      <div class="form-group">
+        <label style="display:flex;justify-content:space-between;align-items:center">
+          투약일 알림
+          <input type="checkbox" id="notif-injection" onchange="saveNotifSettings()" style="width:18px;height:18px;accent-color:var(--primary)">
+        </label>
+        <p style="font-size:11px;color:var(--gray-400);margin-top:4px">앱을 열 때 투약 예정일이 지났으면 알려줍니다</p>
+      </div>
+      <div class="form-group">
+        <label style="display:flex;justify-content:space-between;align-items:center">
+          농도 기반 식단 알림
+          <input type="checkbox" id="notif-conc" onchange="saveNotifSettings()" style="width:18px;height:18px;accent-color:var(--primary)">
+        </label>
+        <p style="font-size:11px;color:var(--gray-400);margin-top:4px">현재 약물 농도에 맞는 식단·생활 리마인드</p>
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:4px" onclick="testNotification()">알림 테스트</button>
+    </div>
     <div class="card" style="border:1px solid var(--danger-light);margin-top:4px">
       <div class="card-title" style="color:var(--danger)">데이터 관리</div>
       <p style="font-size:13px;color:var(--gray-500);margin-bottom:12px">모든 데이터를 내보내거나 초기화할 수 있습니다.</p>
@@ -1687,7 +1710,8 @@ function renderDrugLevel() {
         </div>
         <div style="margin-top:4px">${wBarHtml}</div>
         <div style="margin-top:4px">
-          <div style="height:6px;border-radius:3px;background:#e5e7eb;overflow:hidden;margin-top:16px">
+          <div style="height:16px"></div>
+          <div style="height:6px;border-radius:3px;background:#e5e7eb;overflow:hidden">
             <div style="height:100%;width:${(pct*100).toFixed(1)}%;background:${color};border-radius:3px;transition:width 0.4s"></div>
           </div>
           <div style="text-align:right;font-size:9px;color:${color};margin-top:1px">${label}</div>
@@ -1853,7 +1877,7 @@ function renderDoseOptimization() {
         </div>
         <div style="font-size:11px;color:#374151;line-height:1.4">${r.detail}</div>
       </div>
-      ${r.action ? `<div style="min-width:110px;max-width:130px;background:white;border:1px solid ${m.border};border-radius:8px;padding:8px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:11px;font-weight:600;color:${m.color}">→ ${r.action}</div>` : ''}
+      ${r.action ? `<div style="flex-shrink:0;max-width:45%;background:white;border:1px solid ${m.border};border-radius:8px;padding:8px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:11px;font-weight:600;color:${m.color}">→ ${r.action}</div>` : ''}
     </div>
     ${metaRow}
     <div style="font-size:9px;color:var(--gray-500);margin-top:3px">⚠️ 본 분석은 참고용이며 최종 판단은 반드시 의료진과 상의하세요.</div>`;
@@ -2552,6 +2576,116 @@ function showToast(msg) {
 initDates();
 initProfileForm();
 renderAll();
+initNotifSettings();
+checkNotifications();
+
+// ─── Service Worker Registration ──────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+
+// ─── Notification System ──────────────────────────────
+function initNotifSettings() {
+  const s = DB.get('mj_notif_settings', { injection: false, conc: false });
+  const injEl = document.getElementById('notif-injection');
+  const concEl = document.getElementById('notif-conc');
+  if (injEl) injEl.checked = s.injection;
+  if (concEl) concEl.checked = s.conc;
+  updateNotifPermissionBanner();
+}
+
+function saveNotifSettings() {
+  const s = {
+    injection: document.getElementById('notif-injection')?.checked || false,
+    conc: document.getElementById('notif-conc')?.checked || false,
+  };
+  DB.set('mj_notif_settings', s);
+  if ((s.injection || s.conc) && Notification.permission === 'default') {
+    requestNotifPermission();
+  }
+}
+
+function updateNotifPermissionBanner() {
+  const banner = document.getElementById('notif-permission-banner');
+  if (!banner) return;
+  const s = DB.get('mj_notif_settings', { injection: false, conc: false });
+  banner.style.display = (s.injection || s.conc) && Notification.permission !== 'granted' ? '' : 'none';
+}
+
+function requestNotifPermission() {
+  Notification.requestPermission().then(p => {
+    updateNotifPermissionBanner();
+    if (p === 'granted') {
+      showToast('알림이 활성화되었습니다');
+      checkNotifications();
+    } else {
+      showToast('알림 권한이 거부되었습니다');
+    }
+  });
+}
+
+function sendNotification(title, body, tag) {
+  if (Notification.permission !== 'granted') return;
+  if (navigator.serviceWorker.controller) {
+    navigator.serviceWorker.controller.postMessage({ type: 'SHOW_NOTIFICATION', title, body, tag });
+  } else {
+    new Notification(title, { body, tag });
+  }
+}
+
+function checkNotifications() {
+  if (Notification.permission !== 'granted') return;
+  const s = DB.get('mj_notif_settings', { injection: false, conc: false });
+  const today = todayStr();
+
+  // 투약일 알림
+  if (s.injection && injections.length > 0) {
+    const last = injections[injections.length - 1];
+    const nextMs = new Date(last.date + 'T12:00:00').getTime() + 7 * 86400000;
+    const daysOverdue = (Date.now() - nextMs) / 86400000;
+    const lastNotifDay = localStorage.getItem('mj_last_injection_notif');
+    if (daysOverdue >= 0 && lastNotifDay !== today) {
+      const msg = daysOverdue < 1
+        ? '오늘이 주사 예정일입니다. 잊지 마세요!'
+        : `주사 예정일이 ${Math.floor(daysOverdue + 1)}일 지났습니다. 확인해 주세요.`;
+      sendNotification('💉 마운자로 투약 알림', msg, 'mj-injection');
+      localStorage.setItem('mj_last_injection_notif', today);
+    }
+  }
+
+  // 농도 기반 식단 알림
+  if (s.conc && injections.length > 0) {
+    const lastNotifDay = localStorage.getItem('mj_last_conc_notif');
+    if (lastNotifDay === today) return;
+    const level = calcDrugLevelAt(Date.now());
+    const last = injections[injections.length - 1];
+    const wDecay = Math.pow(0.5, 7 / HALF_LIFE);
+    const ssPeak = parseFloat(last.dose) / (1 - wDecay);
+    const ssTrough = ssPeak * wDecay;
+    let title, body;
+    if (level >= ssTrough * 1.5) {
+      title = '🥗 고농도 구간 식단 알림';
+      body = '현재 약물 농도가 높습니다. 수분을 충분히 섭취하고 영양소 균형 식사를 챙기세요.';
+    } else if (level < ssTrough) {
+      title = '⚠️ 저농도 구간 식단 알림';
+      body = '약물 농도가 낮아지는 시기입니다. 고단백 식단을 유지하고 과식·폭식을 주의하세요.';
+    } else {
+      title = '🍽️ 마운자로 일일 알림';
+      body = '오늘도 규칙적인 식사와 수분 섭취를 잊지 마세요.';
+    }
+    sendNotification(title, body, 'mj-conc');
+    localStorage.setItem('mj_last_conc_notif', today);
+  }
+}
+
+function testNotification() {
+  if (Notification.permission !== 'granted') {
+    requestNotifPermission();
+    return;
+  }
+  sendNotification('🔔 알림 테스트', '마운자로 트래커 알림이 정상 작동합니다!', 'mj-test');
+  showToast('테스트 알림을 전송했습니다');
+}
 
 // ─── Generate app icon via Canvas ─────────────────────
 (function() {
