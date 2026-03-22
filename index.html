@@ -360,21 +360,27 @@
   /* Toast */
   .toast {
     position: fixed;
-    bottom: calc(max(4px, env(safe-area-inset-bottom)) + 64px);
+    bottom: calc(env(safe-area-inset-bottom) + 64px);
     left: 50%;
-    transform: translateX(-50%) translateY(120px);
+    transform: translateX(-50%) translateY(20px);
+    opacity: 0;
     background: var(--gray-900);
     color: white;
     padding: 12px 20px;
     border-radius: 30px;
     font-size: 14px;
     font-weight: 500;
-    transition: transform 0.3s ease;
+    transition: transform 0.28s ease, opacity 0.28s ease;
     z-index: 999;
     white-space: nowrap;
     max-width: calc(100vw - 40px);
+    pointer-events: none;
   }
-  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
 
   /* Divider */
   .divider { height: 1px; background: var(--gray-100); margin: 12px 0; }
@@ -916,9 +922,17 @@
   }
   #home-chart-card {
     flex: 1;
+    height: 0;      /* flex가 높이를 완전히 제어하게 함 */
     min-height: 0;
     overflow: hidden;
     margin-bottom: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  /* 홈 캔버스만: flex:1로 카드 내 남은 공간을 모두 차지 */
+  #home-chart-card canvas {
+    flex: 1;
+    min-height: 0;
   }
   #dose-opt-card {
     flex-shrink: 0;
@@ -1693,15 +1707,10 @@ function ccHomeInit() {
   CC_HOME.dpr = Math.min(window.devicePixelRatio || 1, 2);
 
   const container = CC_HOME.el.parentElement;
-  const cssW = Math.max(220, container.clientWidth || 340);
-  // 카드 실제 높이에서 title+legend+stats+warning+padding (~178px) 을 빼서 캔버스 높이 결정
-  const card = document.getElementById('home-chart-card');
-  const cardH = card ? card.clientHeight : 0;
-  const cssH = cardH > 230
-    ? Math.max(150, cardH - 178)
-    : Math.round(Math.min(200, Math.max(150, cssW * 0.50)));
-  CC_HOME.el.style.width  = cssW + 'px';
-  CC_HOME.el.style.height = cssH + 'px';
+  // CSS flex가 캔버스 표시 크기를 결정함; offsetWidth/offsetHeight 로 읽기
+  const cssW = Math.max(220, CC_HOME.el.offsetWidth || container.clientWidth || 340);
+  const cssH = Math.max(150, CC_HOME.el.offsetHeight || Math.round(cssW * 0.55));
+  // buffer 크기만 설정 (style.width/height 는 CSS flex에 맡김)
   CC_HOME.el.width  = Math.round(cssW * CC_HOME.dpr);
   CC_HOME.el.height = Math.round(cssH * CC_HOME.dpr);
   CC_HOME.W = cssW; CC_HOME.H = cssH;
@@ -2243,7 +2252,8 @@ function renderDrugLevel() {
     })()}
     <div style="font-size:9px;color:var(--gray-400)">⚠️ 참고용 추정값 · 의학적 판단 불가</div>`;
 
-  setTimeout(ccHomeInit, 60);
+  // rAF로 flex 레이아웃 완료 후 canvas 버퍼 크기 결정
+  requestAnimationFrame(() => requestAnimationFrame(ccHomeInit));
 }
 
 // ─── Algorithm A: Food Noise Alert Engine ─────────────
@@ -3523,9 +3533,10 @@ function resetData() {
 // ─── Toast ────────────────────────────────────────────
 function showToast(msg) {
   const t = document.getElementById('toast');
+  clearTimeout(t._tid);
   t.textContent = msg;
   t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
+  t._tid = setTimeout(() => t.classList.remove('show'), 2500);
 }
 
 // ─── Init ─────────────────────────────────────────────
