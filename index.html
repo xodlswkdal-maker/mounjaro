@@ -33,22 +33,23 @@
     --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
   }
 
+  html { height: 100%; }
+
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background: var(--gray-50);
     color: var(--gray-900);
-    min-height: 100vh;
+    height: 100%;
+    overflow: hidden;
   }
 
   /* Header */
   .header {
     background: white;
     border-bottom: 1px solid var(--gray-200);
-    padding: 16px 20px;
-    padding-top: max(16px, calc(env(safe-area-inset-top) + 8px));
-    position: sticky;
-    top: 0;
-    z-index: 100;
+    padding: 10px 20px;
+    padding-top: max(10px, calc(env(safe-area-inset-top) + 6px));
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -63,40 +64,66 @@
   .header h1 { font-size: 18px; font-weight: 700; }
   .header p { font-size: 12px; color: var(--gray-500); }
 
-  /* Nav Tabs */
-  .nav {
+  /* ─── App Shell (fixed, no body scroll) ─────────── */
+  .app-shell {
     display: flex;
-    gap: 4px;
-    padding: 12px 20px;
-    background: white;
-    border-bottom: 1px solid var(--gray-200);
-    overflow-x: auto;
-    scrollbar-width: none;
+    flex-direction: column;
+    height: 100dvh; /* dynamic viewport height */
+    max-width: 480px;
+    margin: 0 auto;
+    overflow: hidden;
+    background: var(--gray-50);
   }
-  .nav::-webkit-scrollbar { display: none; }
-  .nav-btn {
-    padding: 7px 14px;
-    border-radius: 20px;
-    border: none;
-    background: transparent;
-    color: var(--gray-500);
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: all 0.15s;
-  }
-  .nav-btn.active {
-    background: var(--primary-light);
-    color: var(--primary);
-    font-weight: 600;
-  }
-  .nav-btn:hover:not(.active) { background: var(--gray-100); color: var(--gray-700); }
 
-  /* Layout */
-  .main { max-width: 480px; margin: 0 auto; padding: 16px 16px calc(80px + env(safe-area-inset-bottom)); }
-  .section { display: none; }
+  /* Tab content area – fills remaining height, hides overflow */
+  .main-content {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    background: var(--gray-50);
+  }
+
+  /* Each tab: absolute fill, scrolls internally */
+  .section {
+    display: none;
+    position: absolute;
+    inset: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 14px 16px;
+  }
   .section.active { display: block; }
+
+  /* ─── Bottom Navigation ─────────────────────────── */
+  .bottom-nav {
+    flex-shrink: 0;
+    display: flex;
+    background: white;
+    border-top: 1px solid var(--gray-200);
+    padding: 4px 0;
+    padding-bottom: max(4px, env(safe-area-inset-bottom));
+  }
+  .nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 2px;
+    gap: 2px;
+    font-size: 10px;
+    font-weight: 500;
+    font-family: inherit;
+    color: var(--gray-500);
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color 0.15s;
+    line-height: 1.2;
+  }
+  .nav-btn svg { width: 22px; height: 22px; flex-shrink: 0; }
+  .nav-btn.active { color: var(--primary); font-weight: 600; }
+  .nav-btn:hover:not(.active) { color: var(--gray-700); }
 
   /* Cards */
   .card {
@@ -176,6 +203,7 @@
   label { display: block; font-size: 13px; font-weight: 500; color: var(--gray-700); margin-bottom: 5px; }
   input, select, textarea {
     width: 100%;
+    max-width: 100%;
     padding: 10px 12px;
     border: 1px solid var(--gray-300);
     border-radius: 8px;
@@ -185,6 +213,13 @@
     background: white;
     transition: border-color 0.15s;
     outline: none;
+    box-sizing: border-box;
+  }
+  input[type="date"] {
+    -webkit-appearance: none;
+    appearance: none;
+    font-size: 14px;
+    min-width: 0;
   }
   input:focus, select:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,0.1); }
   textarea { resize: vertical; min-height: 70px; }
@@ -516,9 +551,345 @@
   /* Exercise goal ring */
   .goal-ring-wrap { display: flex; flex-direction: column; align-items: center; padding: 8px 0 4px; }
   .goal-ring-label { font-size: 12px; color: var(--gray-500); margin-top: 4px; }
+
+  /* ─── Integrated Coaching ──────────────────────── */
+  .coaching-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;
+  }
+  .coaching-stat {
+    background: var(--gray-50); border-radius: 10px; padding: 10px 8px; text-align: center;
+  }
+  .coaching-stat-val  { font-size: 20px; font-weight: 800; line-height: 1.1; }
+  .coaching-stat-label{ font-size: 10px; color: var(--gray-500); margin-top: 3px; }
+
+  .coaching-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
+  }
+
+  .rate-badge {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; flex-shrink: 0;
+  }
+  .rate-badge.fast    { background: #e0f2fe; color: #0369a1; }
+  .rate-badge.optimal { background: var(--success-light); color: var(--success); }
+  .rate-badge.slow    { background: var(--warning-light); color: #b45309; }
+  .rate-badge.plateau { background: var(--gray-100); color: var(--gray-500); }
+  .rate-badge.gaining { background: var(--danger-light); color: var(--danger); }
+  .rate-badge.unknown { background: var(--gray-100); color: var(--gray-400); }
+
+  .coaching-action {
+    border-radius: 10px; padding: 12px 13px; margin-top: 10px;
+    border-left: 3px solid currentColor;
+  }
+  .coaching-action-title { font-size: 12px; font-weight: 700; margin-bottom: 5px; }
+  .coaching-action-body  { font-size: 12px; line-height: 1.55; color: var(--gray-700); }
+
+  /* Diet targets */
+  .diet-targets-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; margin: 10px 0; }
+  .diet-target {
+    background: var(--gray-50); border-radius: 9px; padding: 9px 6px; text-align: center;
+  }
+  .diet-target-val   { font-size: 15px; font-weight: 800; color: var(--gray-900); }
+  .diet-target-unit  { font-size: 9px; color: var(--gray-400); font-weight: 400; }
+  .diet-target-label { font-size: 10px; color: var(--gray-500); margin-top: 2px; }
+
+  /* Weight rate modifier notice in exercise card */
+  .weight-advisory {
+    display: flex; align-items: flex-start; gap: 8px;
+    padding: 8px 10px; border-radius: 8px; margin-bottom: 8px;
+    background: #f0f9ff; border-left: 3px solid #0369a1;
+    font-size: 11px; color: var(--gray-700); line-height: 1.5;
+  }
+  .weight-advisory.warn { background: #fffbeb; border-left-color: #d97706; }
+  .weight-advisory.danger { background: #fef2f2; border-left-color: #dc2626; }
+
+  /* ─── Tab Fade Animation ──────────────────────── */
+  @keyframes tabFadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .section.active { animation: tabFadeIn 0.18s ease; }
+
+  /* ─── Overdue Banner Variant ──────────────────── */
+  .next-dose-banner.overdue {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+  }
+  .next-dose-banner.today-due {
+    background: linear-gradient(135deg, #d97706, #b45309);
+  }
+
+  /* ─── Goal Progress Banner ────────────────────── */
+  .goal-progress-wrap {
+    background: rgba(255,255,255,0.15);
+    border-radius: 8px; padding: 8px 10px; margin-top: 8px;
+  }
+  .goal-progress-track {
+    height: 6px; border-radius: 3px; background: rgba(255,255,255,0.3); overflow: hidden;
+  }
+  .goal-progress-fill {
+    height: 100%; border-radius: 3px; background: white;
+    transition: width 0.5s ease;
+  }
+  .goal-progress-label {
+    display: flex; justify-content: space-between;
+    font-size: 10px; opacity: 0.9; margin-bottom: 4px;
+  }
+
+  /* ─── Chart Period Buttons ─────────────────────── */
+  .chart-period-bar {
+    display: flex; gap: 4px; margin-bottom: 8px;
+  }
+  .chart-period-btn {
+    flex: 1; padding: 4px 2px; border-radius: 6px;
+    font-size: 10px; font-weight: 600; font-family: inherit;
+    border: 1px solid var(--gray-200); background: var(--gray-50);
+    color: var(--gray-500); cursor: pointer; transition: all 0.15s;
+  }
+  .chart-period-btn.active,
+  .chart-period-btn:hover {
+    background: var(--primary-light); color: var(--primary); border-color: var(--primary);
+  }
+
+  /* ─── Site Rotation Hint ───────────────────────── */
+  .rotation-hint {
+    font-size: 11px; color: var(--primary); background: var(--primary-light);
+    border-radius: 7px; padding: 6px 10px; margin-top: 6px;
+    display: none; align-items: center; gap: 5px; line-height: 1.4;
+  }
+  .rotation-hint.show { display: flex; }
+
+  /* ─── Exercise Detail Sheet ─────────────────────── */
+  .ex-sheet-overlay {
+    display: none; position: fixed; inset: 0; z-index: 300;
+    background: rgba(0,0,0,0.35);
+  }
+  .ex-sheet-overlay.open { display: flex; align-items: flex-end; }
+  .ex-sheet {
+    width: 100%; max-width: 480px; margin: 0 auto;
+    background: white; border-radius: 18px 18px 0 0;
+    padding: 16px 20px 28px; transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.32,0.72,0,1);
+  }
+  .ex-sheet-overlay.open .ex-sheet { transform: translateY(0); }
+  .ex-type-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px;
+  }
+  .ex-type-opt {
+    padding: 10px 6px; border-radius: 10px; text-align: center;
+    border: 1.5px solid var(--gray-200); cursor: pointer; transition: all 0.15s;
+    font-size: 12px; font-weight: 500;
+  }
+  .ex-type-opt.selected {
+    border-color: var(--primary); background: var(--primary-light); color: var(--primary); font-weight: 700;
+  }
+  .ex-dur-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 14px;
+  }
+  .ex-dur-opt {
+    padding: 8px 4px; border-radius: 8px; text-align: center;
+    border: 1.5px solid var(--gray-200); cursor: pointer; transition: all 0.15s;
+    font-size: 11px; font-weight: 500;
+  }
+  .ex-dur-opt.selected {
+    border-color: var(--primary); background: var(--primary-light); color: var(--primary); font-weight: 700;
+  }
+
+  /* ─── SE Pattern Bars ─────────────────────────── */
+  .se-pattern-row {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 7px;
+  }
+  .se-pattern-label { font-size: 11px; color: var(--gray-700); width: 70px; flex-shrink: 0; }
+  .se-pattern-track {
+    flex: 1; height: 8px; border-radius: 4px; background: var(--gray-100); overflow: hidden;
+  }
+  .se-pattern-fill { height: 100%; border-radius: 4px; background: var(--warning); transition: width 0.4s; }
+  .se-pattern-count { font-size: 10px; color: var(--gray-500); width: 22px; text-align: right; flex-shrink: 0; }
+
+  /* ─── Protein Log ─────────────────────────────── */
+  .protein-quick-row {
+    display: flex; gap: 8px; align-items: center; margin-top: 10px;
+  }
+  .protein-progress-wrap {
+    display: flex; align-items: center; gap: 8px; margin-top: 8px;
+  }
+  .protein-progress-track {
+    flex: 1; height: 8px; border-radius: 4px; background: var(--gray-100); overflow: hidden;
+  }
+  .protein-progress-fill {
+    height: 100%; border-radius: 4px; background: #dc2626; transition: width 0.4s;
+  }
+
+  /* ─── Dark Mode ───────────────────────────────── */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --gray-50:  #111113;
+      --gray-100: #1c1c1e;
+      --gray-200: #2c2c2e;
+      --gray-300: #3a3a3c;
+      --gray-500: #8e8e93;
+      --gray-700: #c7c7cc;
+      --gray-900: #f2f2f7;
+    }
+    body { background: #111113; }
+    .app-shell, .main-content { background: #111113; }
+    .header, .bottom-nav { background: #1c1c1e; }
+    .card { background: #1c1c1e; }
+    .sheet-overlay .bottom-sheet,
+    .task-modal-overlay .task-modal,
+    .ex-sheet { background: #1c1c1e; }
+    input, select, textarea {
+      background: #2c2c2e !important; color: var(--gray-900) !important;
+      border-color: var(--gray-300) !important;
+    }
+    .site-opt, .dose-opt, .se-chip, .sev-opt,
+    .subtab-btn, .ex-type-opt, .ex-dur-opt {
+      background: #2c2c2e; color: var(--gray-700); border-color: var(--gray-300);
+    }
+    .subtab-btn.active {
+      background: #3a3a3c; color: var(--primary);
+    }
+    .timeline-item, .log-item {
+      background: #2c2c2e; border-color: var(--gray-300);
+    }
+    .team-stat-card { background: #2c2c2e; }
+    .chart-period-btn { background: #2c2c2e; color: var(--gray-500); border-color: var(--gray-300); }
+    .chart-period-btn.active { background: #3730a3; color: white; border-color: var(--primary); }
+    .owner-banner { background: #1c1c1e; }
+    .goal-progress-wrap { background: rgba(255,255,255,0.1); }
+    .ex-sheet-overlay { background: rgba(0,0,0,0.6); }
+    .rotation-hint { background: #1e1b4b; }
+    .se-pattern-track, .protein-progress-track { background: #2c2c2e; }
+  }
+
+  /* ─── Team Tab ─────────────────────────────────── */
+  .owner-banner {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    border-radius: var(--radius);
+    padding: 16px;
+    color: white;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .owner-avatar {
+    width: 44px; height: 44px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+  .owner-name { font-size: 15px; font-weight: 700; }
+  .owner-sub  { font-size: 11px; opacity: 0.85; margin-top: 2px; }
+
+  .team-stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .team-stat-card {
+    background: white;
+    border-radius: 10px;
+    padding: 10px;
+    text-align: center;
+    box-shadow: var(--shadow);
+  }
+  .team-stat-num  { font-size: 20px; font-weight: 800; color: var(--primary); }
+  .team-stat-label{ font-size: 10px; color: var(--gray-500); margin-top: 2px; }
+
+  .task-create-btn {
+    width: 100%;
+    padding: 13px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    margin-bottom: 12px;
+    transition: background 0.15s;
+  }
+  .task-create-btn:hover { background: #4338ca; }
+
+  .team-section { margin-bottom: 12px; }
+  .team-header {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 8px;
+  }
+  .team-icon {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; flex-shrink: 0;
+  }
+  .team-name { font-size: 13px; font-weight: 700; color: var(--gray-900); }
+  .team-count {
+    margin-left: auto;
+    font-size: 11px; font-weight: 600;
+    background: var(--primary-light); color: var(--primary);
+    padding: 2px 8px; border-radius: 10px;
+  }
+
+  .task-card {
+    background: white;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    border-left: 3px solid var(--gray-200);
+  }
+  .task-card.priority-high  { border-left-color: var(--danger); }
+  .task-card.priority-mid   { border-left-color: var(--warning); }
+  .task-card.priority-low   { border-left-color: var(--success); }
+
+  .task-top { display: flex; align-items: flex-start; gap: 6px; margin-bottom: 4px; }
+  .task-title { font-size: 13px; font-weight: 600; color: var(--gray-900); flex: 1; }
+  .task-sub   { font-size: 11px; color: var(--gray-500); margin-bottom: 6px; }
+  .task-bottom{ display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+  .status-badge {
+    font-size: 10px; font-weight: 600; padding: 2px 8px;
+    border-radius: 10px; cursor: pointer; transition: all 0.15s;
+    border: none; display: inline-flex; align-items: center; gap: 3px;
+  }
+  .status-badge.todo     { background: var(--gray-100); color: var(--gray-500); }
+  .status-badge.doing    { background: #dbeafe; color: #1d4ed8; }
+  .status-badge.done     { background: var(--success-light); color: #059669; }
+
+  .priority-badge {
+    font-size: 10px; font-weight: 600; padding: 2px 7px;
+    border-radius: 10px;
+  }
+  .priority-badge.high { background: var(--danger-light); color: var(--danger); }
+  .priority-badge.mid  { background: var(--warning-light); color: #b45309; }
+  .priority-badge.low  { background: var(--success-light); color: #059669; }
+
+  .task-date { font-size: 10px; color: var(--gray-400); margin-left: auto; }
+
+  /* Task modal overlay */
+  .task-modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45); z-index: 300;
+    display: flex; align-items: flex-end; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .task-modal-overlay.open { opacity: 1; pointer-events: auto; }
+  .task-modal {
+    background: white; border-radius: 20px 20px 0 0;
+    padding: 16px 20px calc(28px + env(safe-area-inset-bottom));
+    width: 100%; max-width: 480px;
+    transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32,0.72,0,1);
+    max-height: 80vh; overflow-y: auto;
+  }
+  .task-modal-overlay.open .task-modal { transform: translateY(0); }
 </style>
 </head>
 <body>
+<div class="app-shell">
 
 <div class="header">
   <div class="header-icon">
@@ -535,30 +906,28 @@
     <h1>Mounjaro Tracker</h1>
     <p>Tirzepatide 복약 관리</p>
   </div>
-  <button class="header-btn" onclick="showTab('profile')" title="프로필 설정">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="12" r="3"/>
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-    </svg>
-  </button>
 </div>
 
-<nav class="nav">
-  <button class="nav-btn active" onclick="showTab('home')">홈</button>
-  <button class="nav-btn" onclick="showTab('record')">기록</button>
-  <button class="nav-btn" onclick="showTab('analysis')">루틴</button>
-</nav>
-
-<div class="main">
+<div class="main-content">
 
   <!-- HOME TAB -->
   <div class="section active" id="tab-home">
 
     <!-- 통합 카드: 농도·체중 그래프 + 잔류 농도 + 체중 변화 -->
     <div class="card" id="home-chart-card" style="padding:14px;min-height:44vh">
-      <div style="text-align:center;padding:20px 0;color:var(--gray-500);font-size:13px">
-        <div style="font-size:32px;margin-bottom:8px">🧪</div>
-        주사 기록을 추가하면 통합 정보가 표시됩니다
+      <div id="home-chart-empty" style="text-align:center;padding:30px 0 20px;color:var(--gray-500);font-size:13px">
+        <div style="font-size:36px;margin-bottom:10px">💉</div>
+        <div style="font-weight:600;color:var(--gray-700);margin-bottom:4px">첫 주사 기록을 추가하세요</div>
+        <div style="font-size:12px;margin-bottom:16px">약물 농도와 체중 변화를 시각적으로 추적합니다</div>
+        <button class="btn btn-primary" style="justify-content:center" onclick="showTab('record');showRecordSub('inj')">
+          + 첫 주사 기록 추가
+        </button>
+      </div>
+      <div id="home-chart-period-bar" class="chart-period-bar" style="display:none">
+        <button class="chart-period-btn" onclick="setChartPeriod(30)">1개월</button>
+        <button class="chart-period-btn" onclick="setChartPeriod(90)">3개월</button>
+        <button class="chart-period-btn" onclick="setChartPeriod(180)">6개월</button>
+        <button class="chart-period-btn active" onclick="setChartPeriod(0)">전체</button>
       </div>
     </div>
 
@@ -579,6 +948,16 @@
         </div>
       </div>
       <div class="days-badge" id="days-left">기록을 추가해주세요</div>
+      <!-- Goal progress inside banner -->
+      <div id="goal-progress-wrap" style="display:none" class="goal-progress-wrap">
+        <div class="goal-progress-label">
+          <span id="goal-progress-text">목표까지</span>
+          <span id="goal-progress-pct"></span>
+        </div>
+        <div class="goal-progress-track">
+          <div class="goal-progress-fill" id="goal-progress-fill" style="width:0%"></div>
+        </div>
+      </div>
     </div>
 
     <!-- Algorithm A: Food Noise Alert -->
@@ -620,6 +999,10 @@
             <div class="site-opt" data-site="복부 우"  onclick="selectSite(this)">복부 우</div>
             <div class="site-opt" data-site="허벅지 좌" onclick="selectSite(this)">허벅지 좌</div>
             <div class="site-opt" data-site="허벅지 우" onclick="selectSite(this)">허벅지 우</div>
+          </div>
+          <div class="rotation-hint" id="rotation-hint">
+            <span>🔄</span>
+            <span id="rotation-hint-text">부위를 로테이션하는 것이 좋습니다</span>
           </div>
         </div>
         <div class="form-group">
@@ -709,8 +1092,49 @@
       </div>
     </div>
 
-    <!-- 데이터 관리 -->
-    <div class="card" style="margin-top:4px">
+  </div>
+
+
+  <!-- PROFILE TAB (하단 설정 탭으로 접근) -->
+  <div class="section" id="tab-profile">
+    <div class="card">
+      <div class="card-title">프로필 설정</div>
+      <p style="font-size:13px;color:var(--gray-500);margin-bottom:14px">설정하면 농도 구간에 맞는 맞춤 운동 플랜을 받을 수 있습니다.</p>
+      <div class="form-group">
+        <label>나이</label>
+        <input type="number" id="prof-age" placeholder="예: 35" min="18" max="100">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="form-group" style="margin-bottom:0">
+          <label>신장 (cm)</label>
+          <input type="number" id="prof-height" placeholder="예: 168" min="100" max="250">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label>목표 체중 (kg)</label>
+          <input type="number" id="prof-target-weight" placeholder="예: 65" min="30" max="200" step="0.1">
+        </div>
+      </div>
+      <div style="margin-bottom:14px"></div>
+      <div class="form-group">
+        <label>성별</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px" id="prof-gender-grid">
+          <div class="site-opt" data-gender="남성" onclick="selectGender(this)">남성</div>
+          <div class="site-opt" data-gender="여성" onclick="selectGender(this)">여성</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>운동 경험</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px" id="prof-level-grid">
+          <div class="site-opt" data-level="beginner" onclick="selectLevel(this)">입문<br><span style="font-size:10px;font-weight:400">주 2~3회</span></div>
+          <div class="site-opt" data-level="intermediate" onclick="selectLevel(this)">중급<br><span style="font-size:10px;font-weight:400">주 4~5회</span></div>
+          <div class="site-opt" data-level="advanced" onclick="selectLevel(this)">상급<br><span style="font-size:10px;font-weight:400">주 5~6회</span></div>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="saveProfile()">저장</button>
+    </div>
+
+    <!-- 알림 설정 -->
+    <div class="card">
       <div class="card-title">알림 설정</div>
       <p style="font-size:13px;color:var(--gray-500);margin-bottom:12px">앱을 열 때 투약 및 농도 기반 알림을 받을 수 있습니다.</p>
       <div id="notif-permission-banner" style="display:none;background:var(--primary-light);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:13px;color:var(--primary)">
@@ -733,7 +1157,9 @@
       </div>
       <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:4px" onclick="testNotification()">알림 테스트</button>
     </div>
-    <div class="card" style="border:1px solid var(--danger-light);margin-top:4px">
+
+    <!-- 데이터 관리 -->
+    <div class="card" style="border:1px solid var(--danger-light)">
       <div class="card-title" style="color:var(--danger)">데이터 관리</div>
       <p style="font-size:13px;color:var(--gray-500);margin-bottom:12px">모든 데이터를 내보내거나 초기화할 수 있습니다.</p>
       <div style="display:flex;gap:8px;margin-bottom:8px">
@@ -747,46 +1173,17 @@
     </div>
   </div>
 
-  <!-- PROFILE TAB (헤더 ⚙️ 아이콘으로 접근) -->
-  <div class="section" id="tab-profile">
-    <div class="card">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
-        <button onclick="showTab('home')" style="background:none;border:none;color:var(--primary);font-size:13px;font-weight:600;cursor:pointer;padding:0;display:flex;align-items:center;gap:4px">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-          홈으로
-        </button>
-        <span style="font-size:14px;font-weight:700;color:var(--gray-900)">프로필 설정</span>
-      </div>
-      <p style="font-size:13px;color:var(--gray-500);margin-bottom:14px">설정하면 농도 구간에 맞는 맞춤 운동 플랜을 받을 수 있습니다.</p>
-      <div class="form-group">
-        <label>나이</label>
-        <input type="number" id="prof-age" placeholder="예: 35" min="18" max="100">
-      </div>
-      <div class="form-group">
-        <label>목표 체중 (kg)</label>
-        <input type="number" id="prof-target-weight" placeholder="예: 65" min="30" max="200" step="0.1">
-      </div>
-      <div class="form-group">
-        <label>성별</label>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px" id="prof-gender-grid">
-          <div class="site-opt" data-gender="남성" onclick="selectGender(this)">남성</div>
-          <div class="site-opt" data-gender="여성" onclick="selectGender(this)">여성</div>
-        </div>
-      </div>
-      <div class="form-group">
-        <label>운동 경험</label>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px" id="prof-level-grid">
-          <div class="site-opt" data-level="beginner" onclick="selectLevel(this)">입문<br><span style="font-size:10px;font-weight:400">주 2~3회</span></div>
-          <div class="site-opt" data-level="intermediate" onclick="selectLevel(this)">중급<br><span style="font-size:10px;font-weight:400">주 4~5회</span></div>
-          <div class="site-opt" data-level="advanced" onclick="selectLevel(this)">상급<br><span style="font-size:10px;font-weight:400">주 5~6회</span></div>
-        </div>
-      </div>
-      <button class="btn btn-primary" onclick="saveProfile()">저장</button>
-    </div>
-  </div>
-
   <!-- ROUTINE TAB (루틴 체계화) -->
   <div class="section" id="tab-analysis">
+
+    <!-- 종합 코칭 카드 (농도 + 감량 속도 통합) -->
+    <div class="card" id="integrated-coaching-card" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div class="card-title" style="margin-bottom:0">오늘의 종합 코칭</div>
+        <span id="coaching-status-badge" class="coaching-badge"></span>
+      </div>
+      <div id="integrated-coaching-content"></div>
+    </div>
 
     <!-- 운동 추천 카드 -->
     <div class="card" id="exercise-home-card" style="display:none"></div>
@@ -794,8 +1191,8 @@
     <!-- 운동 목표 달성률 -->
     <div class="card" id="exercise-goal-card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div class="card-title" style="margin-bottom:0">운동 목표 달성률</div>
-        <span style="font-size:11px;color:var(--gray-500)">주 4회 목표</span>
+        <div class="card-title" style="margin-bottom:0">이번 주 운동 달성률</div>
+        <span id="exercise-goal-target-label" style="font-size:11px;color:var(--gray-500)">주 4회 목표</span>
       </div>
       <div id="exercise-goal-content">
         <div class="empty-state" style="padding:20px">
@@ -803,23 +1200,108 @@
           <p>아직 운동 기록이 없습니다</p>
         </div>
       </div>
-      <button class="btn btn-primary" style="margin-top:12px" onclick="logExerciseToday()">오늘 운동 완료 ✓</button>
+      <button class="btn btn-primary" style="margin-top:12px" onclick="openExerciseSheet()">오늘 운동 완료 ✓</button>
     </div>
 
-    <!-- 식단 분석 -->
+    <!-- 부작용 패턴 분석 -->
+    <div class="card" id="se-pattern-card" style="display:none">
+      <div class="card-title">부작용 패턴 분석</div>
+      <div id="se-pattern-content"></div>
+    </div>
+
+    <!-- 식단 + 영양 가이드 -->
     <div class="card" id="diet-analysis-card">
-      <div class="card-title">식단 분석</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div class="card-title" style="margin-bottom:0">식단 · 영양 가이드</div>
+        <span id="diet-rate-badge" class="rate-badge unknown" style="display:none"></span>
+      </div>
       <div id="diet-analysis-content">
         <div class="empty-state" style="padding:20px">
           <div class="empty-icon">🥗</div>
           <p>주사 기록을 추가하면 식단 가이드가 표시됩니다</p>
         </div>
       </div>
+      <!-- 오늘 단백질 기록 -->
+      <div id="protein-log-section" style="display:none;margin-top:12px;border-top:1px solid var(--gray-200);padding-top:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div style="font-size:12px;font-weight:600;color:var(--gray-700)">🥩 오늘 단백질 기록</div>
+          <span id="protein-target-label" style="font-size:11px;color:var(--gray-500)"></span>
+        </div>
+        <div class="protein-progress-wrap">
+          <span id="protein-consumed-label" style="font-size:11px;color:var(--gray-500);flex-shrink:0">0g</span>
+          <div class="protein-progress-track">
+            <div class="protein-progress-fill" id="protein-progress-fill" style="width:0%"></div>
+          </div>
+          <span id="protein-pct-label" style="font-size:11px;font-weight:700;color:#dc2626;flex-shrink:0">0%</span>
+        </div>
+        <div class="protein-quick-row">
+          <input type="number" id="protein-input" placeholder="섭취량 (g)" min="0" max="300"
+            style="flex:1;padding:8px 10px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:13px">
+          <button class="btn btn-primary" style="flex-shrink:0" onclick="logProtein()">기록</button>
+        </div>
+      </div>
     </div>
 
   </div>
 
+</div><!-- /main-content -->
+
+<!-- ─── Bottom Navigation ──────────────────────── -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" onclick="showTab('home')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/><polyline points="9 21 9 12 15 12 15 21"/>
+    </svg>
+    홈
+  </button>
+  <button class="nav-btn" onclick="showTab('record')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+    </svg>
+    기록
+  </button>
+  <button class="nav-btn" onclick="showTab('analysis')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/>
+    </svg>
+    루틴
+  </button>
+  <button class="nav-btn" onclick="showTab('profile')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+    </svg>
+    설정
+  </button>
+</nav>
+
+<!-- ─── Exercise Detail Sheet ──────────────────── -->
+<div class="ex-sheet-overlay" id="ex-sheet-overlay" onclick="handleExSheetClick(event)">
+  <div class="ex-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">오늘 운동 기록</div>
+    <div class="form-group">
+      <label>운동 종류</label>
+      <div class="ex-type-grid" id="ex-type-grid">
+        <div class="ex-type-opt" data-type="cardio" onclick="selectExType(this)">🏃 유산소</div>
+        <div class="ex-type-opt" data-type="strength" onclick="selectExType(this)">💪 근력</div>
+        <div class="ex-type-opt" data-type="mixed" onclick="selectExType(this)">⚡ 혼합</div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>운동 시간</label>
+      <div class="ex-dur-grid" id="ex-dur-grid">
+        <div class="ex-dur-opt" data-dur="20" onclick="selectExDur(this)">20분</div>
+        <div class="ex-dur-opt" data-dur="30" onclick="selectExDur(this)">30분</div>
+        <div class="ex-dur-opt" data-dur="45" onclick="selectExDur(this)">45분</div>
+        <div class="ex-dur-opt" data-dur="60" onclick="selectExDur(this)">60분+</div>
+      </div>
+    </div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="saveExerciseLog()">운동 완료 저장 💪</button>
+    <button class="btn" style="width:100%;justify-content:center;margin-top:6px;color:var(--gray-500)" onclick="closeExerciseSheet()">취소</button>
+  </div>
 </div>
+
+</div><!-- /app-shell -->
 
 <div class="toast" id="toast"></div>
 
@@ -943,6 +1425,29 @@ function selectSite(el) {
   document.querySelectorAll('.site-opt').forEach(e => e.classList.remove('selected'));
   el.classList.add('selected');
   selectedSite = el.dataset.site;
+  // Rotation hint
+  const hint = document.getElementById('rotation-hint');
+  const hintText = document.getElementById('rotation-hint-text');
+  if (hint && injections.length > 0) {
+    const lastSite = injections[injections.length - 1].site;
+    const ROTATION = {
+      '복부 좌':  '복부 우',
+      '복부 우':  '허벅지 좌',
+      '허벅지 좌':'허벅지 우',
+      '허벅지 우':'복부 좌',
+    };
+    const recommended = ROTATION[lastSite];
+    if (selectedSite === lastSite) {
+      hintText.textContent = `⚠️ 지난번과 같은 부위입니다. ${recommended || '다른 부위'}로 로테이션을 권장합니다.`;
+      hint.classList.add('show');
+    } else if (recommended && selectedSite === recommended) {
+      hintText.textContent = `✅ 완벽한 로테이션! (이전: ${lastSite})`;
+      hint.classList.add('show');
+    } else {
+      hintText.textContent = `이전 부위: ${lastSite} · 권장: ${recommended || '다른 부위'}`;
+      hint.classList.add('show');
+    }
+  }
 }
 function toggleSE(el) {
   el.classList.toggle('selected');
@@ -1895,10 +2400,12 @@ function selectLevel(el) {
 function saveProfile() {
   const age = parseInt(document.getElementById('prof-age').value);
   const tw  = parseFloat(document.getElementById('prof-target-weight').value);
+  const ht  = parseFloat(document.getElementById('prof-height').value);
   const genderEl = document.querySelector('#prof-gender-grid .site-opt.selected');
   const levelEl  = document.querySelector('#prof-level-grid .site-opt.selected');
   userProfile = {
     age:          isNaN(age) ? null : age,
+    height:       isNaN(ht)  ? null : ht,
     gender:       genderEl ? genderEl.dataset.gender : null,
     level:        levelEl  ? levelEl.dataset.level   : null,
     targetWeight: isNaN(tw) ? null : tw,
@@ -1911,6 +2418,8 @@ function initProfileForm() {
   const prof = userProfile;
   const ageEl = document.getElementById('prof-age');
   if (ageEl && prof.age) ageEl.value = prof.age;
+  const htEl = document.getElementById('prof-height');
+  if (htEl && prof.height) htEl.value = prof.height;
   const twEl = document.getElementById('prof-target-weight');
   if (twEl && prof.targetWeight) twEl.value = prof.targetWeight;
   if (prof.gender) {
@@ -1945,6 +2454,31 @@ function calcConcentrationZone() {
   return                         { zone: 'low',  level, theta };
 }
 
+// ─── Weight loss rate classifier ──────────────────────
+function calcWeightLossRate() {
+  if (weights.length < 2) return { rate: 'unknown', weeklyKg: null };
+  const nowMs = Date.now();
+  const DAY = 86400000;
+  const w28 = nowMs - 28 * DAY;
+  let weeklyKg;
+  const older  = weights.filter(w => new Date(w.date + 'T12:00:00').getTime() < w28);
+  const recent = weights.filter(w => new Date(w.date + 'T12:00:00').getTime() >= w28);
+  if (older.length > 0 && recent.length > 0) {
+    weeklyKg = (recent[recent.length - 1].value - older[older.length - 1].value) / 4;
+  } else {
+    const first = weights[0], last2 = weights[weights.length - 1];
+    const days = Math.max(1, (new Date(last2.date + 'T12:00:00') - new Date(first.date + 'T12:00:00')) / DAY);
+    weeklyKg = (last2.value - first.value) / (days / 7);
+  }
+  let rate;
+  if      (weeklyKg < -1.0) rate = 'fast';
+  else if (weeklyKg < -0.5) rate = 'optimal';
+  else if (weeklyKg < -0.1) rate = 'slow';
+  else if (weeklyKg <=  0.1) rate = 'plateau';
+  else                       rate = 'gaining';
+  return { rate, weeklyKg };
+}
+
 function calcExerciseRecommendation() {
   const zoneInfo = calcConcentrationZone();
   if (!zoneInfo) return null;
@@ -1956,7 +2490,9 @@ function calcExerciseRecommendation() {
   const hasMild   = recentSE.length > 0 && !hasSevere;
 
   const lv = userProfile.level || 'beginner';
+  const wRate = calcWeightLossRate();
 
+  // ─ Base exercise config per zone ──────────────────
   const ZONES = {
     peak: {
       label: '고농도 (Peak)', color: '#dc2626', bg: '#fee2e2', icon: '🔴',
@@ -1978,21 +2514,24 @@ function calcExerciseRecommendation() {
     },
     low: {
       label: '저농도 (Low)', color: '#d97706', bg: '#fef3c7', icon: '🟡',
-      strategy: '컨디션 확인 후 고강도 가능',
+      strategy: '고강도 운동 가능 구간',
       cardio:   { beginner: '중강도 걷기·조깅 30분', intermediate: '인터벌 런닝 또는 HIIT 30분', advanced: 'HIIT 또는 고강도 유산소 35~45분' },
       strength: { beginner: '기본 전신 근력 3세트', intermediate: '근력 위주 + 복합 운동', advanced: '최대 중량 80~90% 근력 운동' },
       avoid: '식욕 회복 구간이므로 과식 주의, 운동 후 과도한 보상 심리 경계',
-      tip: '약효가 약해지는 구간입니다. 식욕이 돌아올 수 있으니 식단 관리에 더 신경 쓰세요. 컨디션이 좋다면 고강도 운동도 가능합니다.',
+      tip: '약효가 약해지는 구간입니다. 식욕이 돌아올 수 있으니 식단 관리에 더 신경 쓰세요.',
       frequency: { beginner: '주 3회', intermediate: '주 4~5회', advanced: '주 5~6회' },
     },
   };
 
   const base = ZONES[zone];
   const downgrade = { advanced: 'intermediate', intermediate: 'beginner', beginner: 'rest' };
+  const upgrade   = { beginner: 'intermediate', intermediate: 'advanced', advanced: 'advanced' };
 
   let effectiveLv = lv;
   let intensityModifier = '';
+  let weightAdvisory = null;  // { type: 'info'|'warn'|'danger', text }
 
+  // ─ Side-effect modifier (priority override) ─────────
   if (hasSevere) {
     intensityModifier = '⚠️ 심한 부작용으로 강도 하향 조정';
     effectiveLv = downgrade[lv] || 'rest';
@@ -2002,9 +2541,45 @@ function calcExerciseRecommendation() {
     if (effectiveLv === 'rest') effectiveLv = 'beginner';
   }
 
+  // ─ Weight-rate modifier (applied after side-effect) ─
+  if (effectiveLv !== 'rest' && wRate.rate !== 'unknown') {
+    if (wRate.rate === 'fast') {
+      // Losing > 1 kg/week → downgrade to protect muscle
+      effectiveLv = downgrade[effectiveLv] || effectiveLv;
+      weightAdvisory = {
+        type: 'danger',
+        text: `주간 감량 ${Math.abs(wRate.weeklyKg).toFixed(2)} kg — 과속 감량으로 근손실 위험이 높습니다. 강도를 낮추고 단백질 섭취를 늘리세요.`
+      };
+    } else if (wRate.rate === 'slow' && zone !== 'peak') {
+      // Losing slowly + not at peak → can try to upgrade
+      effectiveLv = upgrade[effectiveLv];
+      weightAdvisory = {
+        type: 'warn',
+        text: `주간 감량 ${Math.abs(wRate.weeklyKg).toFixed(2)} kg — 감량이 느립니다. 운동 강도를 높여 칼로리 소모를 늘리세요.`
+      };
+    } else if (wRate.rate === 'plateau') {
+      effectiveLv = upgrade[effectiveLv];
+      weightAdvisory = {
+        type: 'warn',
+        text: `체중이 정체 중입니다. 강도를 높이고 식단을 재점검하세요 (특히 저농도 구간 과식 주의).`
+      };
+    } else if (wRate.rate === 'gaining') {
+      effectiveLv = upgrade[effectiveLv];
+      weightAdvisory = {
+        type: 'danger',
+        text: `체중이 증가 중입니다 (+${Math.abs(wRate.weeklyKg).toFixed(2)} kg/주). 운동 강도를 최대로 높이고 식단을 즉시 점검하세요.`
+      };
+    } else if (wRate.rate === 'optimal') {
+      weightAdvisory = {
+        type: 'info',
+        text: `주간 감량 ${Math.abs(wRate.weeklyKg).toFixed(2)} kg — 이상적인 속도입니다. 현재 루틴을 유지하세요.`
+      };
+    }
+  }
+
   if (effectiveLv === 'rest') {
     return {
-      zone, level, theta, intensityModifier,
+      zone, level, theta, wRate, intensityModifier, weightAdvisory,
       label: base.label, color: base.color, bg: base.bg, icon: base.icon, strategy: base.strategy,
       cardio: '오늘은 휴식을 권장합니다. 가벼운 스트레칭만 하세요.',
       strength: '충분한 수분 섭취와 소화하기 쉬운 식단을 유지하세요.',
@@ -2016,7 +2591,7 @@ function calcExerciseRecommendation() {
   }
 
   return {
-    zone, level, theta, intensityModifier,
+    zone, level, theta, wRate, intensityModifier, weightAdvisory,
     label: base.label, color: base.color, bg: base.bg, icon: base.icon, strategy: base.strategy,
     cardio:    base.cardio[effectiveLv]    || base.cardio.beginner,
     strength:  base.strength[effectiveLv]  || base.strength.beginner,
@@ -2037,12 +2612,26 @@ function renderExerciseCard() {
   const levelLabel = { beginner: '입문', intermediate: '중급', advanced: '상급' };
   const profLv = userProfile.level ? ` · ${levelLabel[userProfile.level]}` : '';
 
+  const rateLabels = { fast:'과속감량', optimal:'이상적감량', slow:'감량느림', plateau:'정체', gaining:'체중증가', unknown:'' };
+  const rateBadge = r.wRate && r.wRate.rate !== 'unknown'
+    ? `<span class="rate-badge ${r.wRate.rate}">${rateLabels[r.wRate.rate]}</span>` : '';
+
+  const advisoryHtml = r.weightAdvisory
+    ? `<div class="weight-advisory ${r.weightAdvisory.type === 'danger' ? 'danger' : r.weightAdvisory.type === 'warn' ? 'warn' : ''}">
+        <span style="font-size:14px;flex-shrink:0">${r.weightAdvisory.type === 'danger' ? '🚨' : r.weightAdvisory.type === 'warn' ? '⚠️' : 'ℹ️'}</span>
+        <span>${r.weightAdvisory.text}</span>
+      </div>` : '';
+
   card.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
       <div class="card-title" style="margin-bottom:0">오늘의 운동 추천</div>
-      <span class="zone-pill ${r.zone}">${r.icon} ${r.label}</span>
+      <div style="display:flex;align-items:center;gap:5px">
+        ${rateBadge}
+        <span class="zone-pill ${r.zone}">${r.icon} ${r.label}</span>
+      </div>
     </div>
     ${r.intensityModifier ? `<div class="se-modifier">${r.intensityModifier}</div>` : ''}
+    ${advisoryHtml}
 
     <div class="ex-item-label">유산소</div>
     <div class="ex-item" style="margin-bottom:8px">
@@ -2161,17 +2750,90 @@ function closeInfoSheet(e) {
 }
 
 // ─── Exercise logging ─────────────────────────────────
-function logExerciseToday() {
+let selectedExType = null;
+let selectedExDur  = null;
+
+function openExerciseSheet() {
   const today = todayStr();
   if (exerciseLogs.find(e => e.date === today)) {
     showToast('오늘은 이미 운동이 기록되었습니다');
     return;
   }
-  exerciseLogs.push({ date: today, id: Date.now() });
+  selectedExType = null; selectedExDur = null;
+  document.querySelectorAll('.ex-type-opt, .ex-dur-opt').forEach(e => e.classList.remove('selected'));
+  document.getElementById('ex-sheet-overlay').classList.add('open');
+}
+function closeExerciseSheet() {
+  document.getElementById('ex-sheet-overlay').classList.remove('open');
+}
+function handleExSheetClick(e) {
+  if (e.target === document.getElementById('ex-sheet-overlay')) closeExerciseSheet();
+}
+function selectExType(el) {
+  document.querySelectorAll('.ex-type-opt').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedExType = el.dataset.type;
+}
+function selectExDur(el) {
+  document.querySelectorAll('.ex-dur-opt').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedExDur = parseInt(el.dataset.dur);
+}
+function saveExerciseLog() {
+  if (!selectedExType) { showToast('운동 종류를 선택해주세요'); return; }
+  if (!selectedExDur)  { showToast('운동 시간을 선택해주세요'); return; }
+  const today = todayStr();
+  exerciseLogs.push({ date: today, id: Date.now(), type: selectedExType, durationMin: selectedExDur });
   exerciseLogs.sort((a, b) => a.date.localeCompare(b.date));
   DB.set('mj_exercise_logs', exerciseLogs);
-  showToast('오늘 운동이 기록되었습니다 💪');
+  closeExerciseSheet();
+  showToast('운동이 기록되었습니다 💪');
   renderAll();
+}
+function deleteExercise(id) {
+  exerciseLogs = exerciseLogs.filter(e => e.id !== id);
+  DB.set('mj_exercise_logs', exerciseLogs);
+  showToast('운동 기록이 삭제되었습니다');
+  renderAll();
+}
+
+// ─── Protein log ──────────────────────────────────────
+let proteinLogs = DB.get('mj_protein_logs', []);
+
+function logProtein() {
+  const input = document.getElementById('protein-input');
+  const g = parseInt(input.value);
+  if (isNaN(g) || g <= 0) { showToast('섭취량(g)을 입력해주세요'); return; }
+  const today = todayStr();
+  const existing = proteinLogs.find(p => p.date === today);
+  if (existing) { existing.grams += g; }
+  else { proteinLogs.push({ date: today, grams: g, id: Date.now() }); }
+  DB.set('mj_protein_logs', proteinLogs);
+  input.value = '';
+  showToast(`단백질 ${g}g 기록 완료`);
+  renderDietAnalysis();
+}
+
+// ─── Chart period preset ──────────────────────────────
+function setChartPeriod(days) {
+  const now = Date.now();
+  const DAY = 864e5;
+  document.querySelectorAll('.chart-period-btn').forEach(b => b.classList.remove('active'));
+  if (days === 0) {
+    // Show all
+    const allMs = [
+      ...injections.map(i => new Date(i.date + 'T12:00:00').getTime()),
+      ...weights.map(w => new Date(w.date + 'T12:00:00').getTime()),
+    ];
+    CC_HOME.v0 = allMs.length ? Math.min(...allMs) - 5*DAY : now - 30*DAY;
+    CC_HOME.v1 = allMs.length ? Math.max(now, Math.max(...allMs)) + 8*DAY : now + 14*DAY;
+    event.currentTarget.classList.add('active');
+  } else {
+    CC_HOME.v0 = now - days * DAY;
+    CC_HOME.v1 = now + 7 * DAY;
+    event.currentTarget.classList.add('active');
+  }
+  if (CC_HOME.ctx) ccDraw(CC_HOME);
 }
 
 function getWeeklyExerciseCount() {
@@ -2223,8 +2885,12 @@ function renderTimeline() {
       icon = '⚠️'; main = item.data.symptoms.join(', ');
       sub = sevLabel[item.data.severity] + (item.data.memo ? ' · ' + item.data.memo : '');
       deleteBtn = `<button class="btn btn-danger btn-sm" onclick="deleteSE(${item.data.id})">삭제</button>`;
-    } else {
-      icon = '🏋️'; main = '운동 완료'; sub = '';
+    } else if (item.type === 'ex') {
+      const typeLabels = { cardio: '유산소', strength: '근력', mixed: '혼합' };
+      icon = '🏋️';
+      main = (typeLabels[item.data.type] || '운동') + (item.data.durationMin ? ` · ${item.data.durationMin}분` : '');
+      sub = '';
+      deleteBtn = `<button class="btn btn-danger btn-sm" onclick="deleteExercise(${item.data.id})">삭제</button>`;
     }
     return `<div class="timeline-item">
       <div class="timeline-icon ${item.type}">${icon}</div>
@@ -2241,18 +2907,129 @@ function renderTimeline() {
     ${hasMore ? `<button class="btn" style="width:100%;justify-content:center;margin-top:8px;background:var(--gray-100);color:var(--gray-700)" onclick="showAllTimeline()">더보기</button>` : ''}`;
 }
 
+// ─── Integrated Coaching (농도 × 감량속도 종합) ─────────
+function renderIntegratedCoaching() {
+  const card    = document.getElementById('integrated-coaching-card');
+  const content = document.getElementById('integrated-coaching-content');
+  const badge   = document.getElementById('coaching-status-badge');
+  if (!card || !content) return;
+
+  if (injections.length === 0) { card.style.display = 'none'; return; }
+
+  const zoneInfo = calcConcentrationZone();
+  if (!zoneInfo) { card.style.display = 'none'; return; }
+
+  card.style.display = '';
+
+  const wRate   = calcWeightLossRate();
+  const { zone, level, theta } = zoneInfo;
+
+  // Concentration % relative to steady-state peak
+  const last = injections[injections.length - 1];
+  const wDecay = Math.pow(0.5, 7 / HALF_LIFE);
+  const ssPeak = parseFloat(last.dose) / (1 - wDecay);
+  const concPct = ssPeak > 0 ? Math.min(Math.round(level / ssPeak * 100), 999) : 0;
+
+  // Zone meta
+  const ZONE_META = {
+    peak: { label: '고농도', color: '#dc2626', bg: '#fee2e2', icon: '🔴' },
+    mid:  { label: '중간 농도', color: '#059669', bg: '#d1fae5', icon: '🟢' },
+    low:  { label: '저농도',  color: '#d97706', bg: '#fef3c7', icon: '🟡' },
+  };
+  const zm = ZONE_META[zone];
+
+  // Rate meta
+  const RATE_META = {
+    fast:    { label: '과속 감량', color: '#0369a1' },
+    optimal: { label: '이상적 감량', color: '#059669' },
+    slow:    { label: '감량 느림', color: '#b45309' },
+    plateau: { label: '정체', color: '#6b7280' },
+    gaining: { label: '체중 증가', color: '#dc2626' },
+    unknown: { label: '체중 미측정', color: '#9ca3af' },
+  };
+  const rm = RATE_META[wRate.rate];
+
+  // Status badge text
+  if (badge) {
+    badge.textContent = `${zm.icon} ${zm.label} · ${rm.label}`;
+    badge.style.background = zm.bg;
+    badge.style.color = zm.color;
+  }
+
+  // 2D coaching message matrix
+  const COACHING = {
+    peak: {
+      fast:    { icon:'🆘', title:'근손실 경보', body:'고농도·과속 감량의 최악 조합입니다. 지금 당장 칼로리를 200~300kcal 늘리고 단백질(×2.0g/kg)을 최우선으로 채우세요. 운동은 최소한으로만.' },
+      optimal: { icon:'✅', title:'이상적 상태', body:'고농도 구간에서 적절히 감량 중입니다. 가벼운 운동 + 단백질 집중 섭취를 유지하면서 현재 흐름을 이어가세요.' },
+      slow:    { icon:'⚠️', title:'감량 속도 점검', body:'고농도임에도 감량이 느립니다. 식사량(특히 지방·정제 탄수화물)을 점검하고 저녁 식사를 줄여보세요. 부작용으로 무기력하다면 쉬운 걷기라도 유지하세요.' },
+      plateau: { icon:'⏸', title:'정체 극복 필요', body:'고농도 구간인데 체중이 멈췄습니다. 식단 기록을 시작하고 숨겨진 칼로리(음료·간식)를 찾아보세요. 의료진과 용량 조정을 상의할 시점일 수 있습니다.' },
+      gaining: { icon:'🚨', title:'긴급 식단 점검', body:'약이 작용 중임에도 체중이 증가 중입니다. 야식·고칼로리 음료가 주범일 가능성이 높습니다. 오늘부터 식단 일지를 반드시 기록하세요.' },
+      unknown: { icon:'ℹ️', title:'체중 기록 필요', body:'잔류농도 기반 운동 추천은 제공되고 있습니다. 체중을 기록하면 더 정밀한 식단·운동 코칭이 가능합니다.' },
+    },
+    mid: {
+      fast:    { icon:'⚡', title:'과속 감량 주의', body:'지방 연소 최적 구간이지만 너무 빠르게 빠지고 있습니다. 탄수화물 100~200kcal를 추가하고 운동 강도를 약간 낮추세요. 근육을 지켜야 장기 감량이 가능합니다.' },
+      optimal: { icon:'🏆', title:'완벽한 상태!', body:'중간 농도 + 이상적 감량 속도 — 지방 연소의 최적 조건입니다. 현재 운동·식단을 그대로 유지하세요. 이 흐름이 가장 좋습니다.' },
+      slow:    { icon:'⚠️', title:'운동량 늘려야 할 때', body:'중간 농도 구간에서 최대 효율을 내지 못하고 있습니다. 유산소 시간을 10~15분 늘리거나 빈도를 1회 더 추가하세요. 탄수화물 섭취량을 점검하세요.' },
+      plateau: { icon:'⏸', title:'루틴 변화 시도', body:'식단과 운동 루틴에 몸이 적응했을 수 있습니다. 운동 종류를 바꾸거나 간헐적 단식(16:8)을 1~2주 시도해보세요.' },
+      gaining: { icon:'🚨', title:'식단 즉시 점검', body:'중간 농도임에도 체중이 증가 중입니다. 식단 일지 작성을 시작하고 숨겨진 고칼로리 요인을 찾으세요. 운동량을 유지하면서 저녁 탄수화물을 크게 줄이세요.' },
+      unknown: { icon:'ℹ️', title:'체중 기록 필요', body:'지금이 지방 연소 최적 구간입니다. 체중을 기록하면 얼마나 잘 되고 있는지 정확히 알 수 있습니다.' },
+    },
+    low: {
+      fast:    { icon:'⚡', title:'저농도 과속 감량 주의', body:'약효가 줄어들며 식욕이 돌아오는 구간에서 과속 감량 중입니다. 단백질 섭취(×2.0g/kg)를 최우선으로 하고, 근력 운동으로 근육을 지키세요.' },
+      optimal: { icon:'✅', title:'좋은 흐름 유지', body:'저농도 구간에서도 이상적으로 감량 중입니다. 식욕이 회복될 수 있으니 식단 기록을 꼼꼼히 유지하고 현재 운동 강도를 이어가세요.' },
+      slow:    { icon:'⚠️', title:'식욕 관리 필요', body:'약효가 줄어드는 구간에서 감량도 느려졌습니다. 식욕이 회복되고 있을 가능성이 높습니다. HIIT나 고강도 운동을 추가하고 저녁 식사량을 줄이세요.' },
+      plateau: { icon:'⏸', title:'저농도 정체 — 식단 강화', body:'저농도 + 정체 조합은 식욕 회복으로 칼로리를 보충하고 있을 가능성이 큽니다. 식단 일지를 바로 시작하고 운동 강도를 최대로 높이세요.' },
+      gaining: { icon:'🚨', title:'식욕 폭발 주의', body:'저농도 구간의 "푸드 노이즈"가 작동 중일 가능성이 높습니다. 오늘 당장 식단 일지를 시작하고, 야식과 고칼로리 음료를 완전히 차단하세요.' },
+      unknown: { icon:'ℹ️', title:'체중 기록이 중요한 구간', body:'저농도는 식욕이 회복되는 위험한 구간입니다. 체중을 자주 측정하면 빠른 대처가 가능합니다.' },
+    },
+  };
+
+  const msg = COACHING[zone]?.[wRate.rate] || COACHING[zone]?.unknown;
+
+  // Stats row
+  const weeklyStr = wRate.weeklyKg !== null
+    ? `${wRate.weeklyKg <= 0 ? '▼' : '▲'} ${Math.abs(wRate.weeklyKg).toFixed(2)} kg/주`
+    : '기록 없음';
+  const weeklyColor = wRate.weeklyKg === null ? 'var(--gray-400)' : wRate.weeklyKg <= -0.5 ? '#059669' : wRate.weeklyKg < 0 ? '#d97706' : '#dc2626';
+
+  content.innerHTML = `
+    <div class="coaching-grid">
+      <div class="coaching-stat">
+        <div class="coaching-stat-val" style="color:${zm.color}">${concPct}<span style="font-size:12px;font-weight:500">%</span></div>
+        <div class="coaching-stat-label">잔류농도 (정상피크 대비)</div>
+      </div>
+      <div class="coaching-stat">
+        <div class="coaching-stat-val" style="color:${weeklyColor}">${weeklyStr}</div>
+        <div class="coaching-stat-label">최근 감량 속도</div>
+      </div>
+    </div>
+    <div class="coaching-action" style="background:${zm.bg};color:${zm.color}">
+      <div class="coaching-action-title">${msg.icon} ${msg.title}</div>
+      <div class="coaching-action-body">${msg.body}</div>
+    </div>`;
+}
+
 // ─── Weekly exercise goal ──────────────────────────────
 function renderWeeklyExerciseGoal() {
   const el = document.getElementById('exercise-goal-content');
   if (!el) return;
 
+  // Dynamic goal based on concentration zone
+  const zoneInfo = calcConcentrationZone();
+  const goal = zoneInfo ? (zoneInfo.zone === 'peak' ? 3 : zoneInfo.zone === 'low' ? 5 : 4) : 4;
+  const targetLabel = document.getElementById('exercise-goal-target-label');
+  if (targetLabel) targetLabel.textContent = `주 ${goal}회 목표`;
+
   const count = getWeeklyExerciseCount();
-  const goal = 4;
   const pct = Math.min(count / goal, 1);
   const r = 38, cx = 50, cy = 50;
   const circumference = 2 * Math.PI * r;
   const dashOffset = circumference * (1 - pct);
-  const color = count >= goal ? '#10b981' : count >= 2 ? '#4f46e5' : '#f59e0b';
+  const color = count >= goal ? '#10b981' : count >= Math.ceil(goal / 2) ? '#4f46e5' : '#f59e0b';
+
+  const goalNote = zoneInfo
+    ? { peak: '고농도: 회복 우선 (주 3회)', mid: '중간농도: 최적 운동량 (주 4회)', low: '저농도: 강도 높게 (주 5회)' }[zoneInfo.zone]
+    : '';
 
   el.innerHTML = `
     <div class="goal-ring-wrap">
@@ -2267,84 +3044,206 @@ function renderWeeklyExerciseGoal() {
       </svg>
       <div class="goal-ring-label">이번 주 운동 횟수</div>
     </div>
-    <div style="text-align:center;font-size:12px;padding:4px 0 2px;${count >= goal ? 'color:#10b981;font-weight:600' : 'color:var(--gray-500)'}">
+    <div style="text-align:center;font-size:12px;padding:2px 0;${count >= goal ? 'color:#10b981;font-weight:600' : 'color:var(--gray-500)'}">
       ${count >= goal ? '🎉 이번 주 목표 달성!' : `목표까지 ${goal - count}회 남았습니다`}
+    </div>
+    ${goalNote ? `<div style="margin-top:6px;text-align:center;font-size:10px;color:var(--gray-400)">${goalNote}</div>` : ''}`;
+}
+
+// ─── SE Pattern Card ──────────────────────────────────
+function renderSEPatternCard() {
+  const card = document.getElementById('se-pattern-card');
+  const content = document.getElementById('se-pattern-content');
+  if (!card || !content) return;
+  if (sideEffects.length === 0) { card.style.display = 'none'; return; }
+
+  // Count symptom frequencies
+  const counts = {};
+  sideEffects.forEach(se => {
+    (se.symptoms || []).forEach(sym => { counts[sym] = (counts[sym] || 0) + 1; });
+  });
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  if (sorted.length === 0) { card.style.display = 'none'; return; }
+
+  card.style.display = '';
+  const maxCount = sorted[0][1];
+  content.innerHTML = sorted.map(([sym, cnt]) => {
+    const pct = Math.round(cnt / maxCount * 100);
+    const freq = Math.round(cnt / sideEffects.length * 100);
+    return `<div class="se-pattern-row">
+      <div style="font-size:12px;color:var(--gray-700);width:80px;flex-shrink:0">${sym}</div>
+      <div style="flex:1;height:8px;background:var(--gray-100);border-radius:4px;overflow:hidden">
+        <div class="se-pattern-fill" style="width:${pct}%;height:100%;border-radius:4px;background:var(--warning)"></div>
+      </div>
+      <div style="font-size:11px;color:var(--gray-500);width:44px;text-align:right;flex-shrink:0">${cnt}회 (${freq}%)</div>
     </div>`;
+  }).join('');
 }
 
 // ─── Diet analysis ────────────────────────────────────
 function renderDietAnalysis() {
   const el = document.getElementById('diet-analysis-content');
+  const rateBadgeEl = document.getElementById('diet-rate-badge');
   if (!el) return;
 
   if (injections.length === 0) {
     el.innerHTML = `<div class="empty-state" style="padding:20px"><div class="empty-icon">🥗</div><p>주사 기록을 추가하면 식단 가이드가 표시됩니다</p></div>`;
+    if (rateBadgeEl) rateBadgeEl.style.display = 'none';
     return;
   }
 
   const zoneInfo = calcConcentrationZone();
   if (!zoneInfo) {
     el.innerHTML = `<div class="empty-state" style="padding:20px"><div class="empty-icon">🥗</div><p>주사 기록을 추가하면 식단 가이드가 표시됩니다</p></div>`;
+    if (rateBadgeEl) rateBadgeEl.style.display = 'none';
     return;
   }
 
-  const dietGuide = {
-    peak: {
-      title: '고농도 구간 식단 전략', color: '#dc2626', bg: '#fee2e2',
-      tips: [
-        { icon: '🥩', text: '단백질 우선 섭취: 체중 1kg당 1.6g 이상을 목표로 근손실을 방지하세요.' },
-        { icon: '🥦', text: '소화 부담 적은 채소와 저지방 단백질(닭가슴살, 두부, 계란)을 중심으로 구성하세요.' },
-        { icon: '⚡', text: '식욕 저하 시에도 단백질 쉐이크 등으로 단백질 목표를 채우세요.' },
-      ],
-      note: '이 구간은 오심이 올 수 있습니다. 소량씩 자주 드세요.',
-    },
-    mid: {
-      title: '중간 농도 구간 식단 전략', color: '#059669', bg: '#d1fae5',
-      tips: [
-        { icon: '🥗', text: '영양 밀도 높은 식단: 채소, 통곡물, 저지방 단백질 조합이 이상적입니다.' },
-        { icon: '🍎', text: '혈당 스파이크를 방지하는 저GI 식품을 선택하세요 (현미, 고구마, 사과 등).' },
-        { icon: '💧', text: '하루 1.5~2L 수분 섭취로 대사를 유지하세요.' },
-      ],
-      note: '지방 연소에 가장 효율적인 구간입니다. 과도한 칼로리 제한은 오히려 근손실을 유발합니다.',
-    },
-    low: {
-      title: '저농도 구간 식단 전략', color: '#d97706', bg: '#fef3c7',
-      tips: [
-        { icon: '🍽️', text: '식욕이 회복되는 구간입니다. 식사 전 물 한 잔으로 과식을 방지하세요.' },
-        { icon: '🥜', text: '포만감 있는 고섬유질 식품(견과류, 콩류, 브로콜리)으로 과식 충동을 조절하세요.' },
-        { icon: '📝', text: '식단 일지를 꼼꼼히 기록하여 과식 패턴을 파악하세요.' },
-      ],
-      note: '식욕이 돌아오는 구간입니다. "보상 심리"로 인한 과식을 경계하세요.',
-    },
-  };
+  const wRate   = calcWeightLossRate();
+  const bw      = userProfile.targetWeight || (weights.length > 0 ? weights[weights.length - 1].value : null);
+  const currBw  = weights.length > 0 ? weights[weights.length - 1].value : null;
 
-  const g = dietGuide[zoneInfo.zone];
-
-  let speedHtml = '';
-  if (weights.length >= 2) {
-    const r = calcDoseOptimization();
-    if (r && r.weightSlope !== null) {
-      const weekly = r.weightSlope * 7;
-      const speedColor = weekly <= -0.3 ? '#10b981' : weekly <= 0 ? '#f59e0b' : '#ef4444';
-      speedHtml = `
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--gray-50);border-radius:8px;margin-bottom:10px">
-          <div style="font-size:12px;color:var(--gray-500)">최근 체중 감소 속도</div>
-          <div style="font-size:14px;font-weight:700;color:${speedColor}">${weekly <= 0 ? '▼' : '▲'} ${Math.abs(weekly).toFixed(2)} kg/주</div>
-        </div>`;
-    }
+  // ─ Weight rate badge in card header ─────────────────
+  if (rateBadgeEl && wRate.rate !== 'unknown') {
+    const rLabels = { fast:'과속 감량', optimal:'이상적 감량', slow:'감량 느림', plateau:'정체', gaining:'체중 증가' };
+    rateBadgeEl.textContent = rLabels[wRate.rate] || '';
+    rateBadgeEl.className = `rate-badge ${wRate.rate}`;
+    rateBadgeEl.style.display = '';
+  } else if (rateBadgeEl) {
+    rateBadgeEl.style.display = 'none';
   }
 
-  el.innerHTML = `${speedHtml}
-    <div style="padding:12px;background:${g.bg};border-radius:8px;margin-bottom:10px">
-      <div style="font-size:12px;font-weight:700;color:${g.color};margin-bottom:10px">${g.title}</div>
-      ${g.tips.map(t => `<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px">
-        <span style="font-size:16px;flex-shrink:0">${t.icon}</span>
+  // ─ Nutrition targets based on current weight ─────────
+  let targetHtml = '';
+  if (currBw) {
+    // Protein: rate-adjusted (fast→2.0g/kg, optimal→1.8g, slow/plateau/gaining→1.6g)
+    const proteinMult = wRate.rate === 'fast' ? 2.0 : wRate.rate === 'optimal' ? 1.8 : 1.6;
+    const proteinG    = Math.round(currBw * proteinMult);
+
+    // Calorie estimate: Mifflin-St Jeor if height available, else weight-based fallback
+    let bmr;
+    const ht = userProfile.height;
+    const age = userProfile.age || 40;
+    const isMale = userProfile.gender !== 'female';
+    if (ht && currBw) {
+      bmr = isMale
+        ? 10 * currBw + 6.25 * ht - 5 * age + 5
+        : 10 * currBw + 6.25 * ht - 5 * age - 161;
+    } else {
+      bmr = currBw * 22;
+    }
+    const actFactor = userProfile.level === 'active' ? 1.55 : userProfile.level === 'moderate' ? 1.375 : 1.2;
+    const baseCal = Math.round(bmr * actFactor);
+    const calAdj  = wRate.rate === 'fast' ? 200 : wRate.rate === 'slow' ? -150 : wRate.rate === 'plateau' ? -200 : wRate.rate === 'gaining' ? -300 : 0;
+    const targetCal = baseCal + calAdj;
+
+    // Water: 35ml/kg
+    const waterL = (currBw * 35 / 1000).toFixed(1);
+
+    const calColor = calAdj < 0 ? '#dc2626' : calAdj > 0 ? '#059669' : 'var(--gray-900)';
+    const calNote  = calAdj > 0 ? '(+증량)' : calAdj < 0 ? '(감량)' : '';
+
+    targetHtml = `
+      <div class="diet-targets-row">
+        <div class="diet-target">
+          <div class="diet-target-val" style="color:#dc2626">${proteinG}<span class="diet-target-unit">g</span></div>
+          <div class="diet-target-label">단백질/일</div>
+        </div>
+        <div class="diet-target">
+          <div class="diet-target-val" style="color:${calColor}">${targetCal}<span class="diet-target-unit">kcal</span></div>
+          <div class="diet-target-label">목표칼로리 ${calNote}</div>
+        </div>
+        <div class="diet-target">
+          <div class="diet-target-val" style="color:#0369a1">${waterL}<span class="diet-target-unit">L</span></div>
+          <div class="diet-target-label">수분/일</div>
+        </div>
+      </div>`;
+  }
+
+  // ─ Rate-specific advisory ────────────────────────────
+  const rateAdvisory = {
+    fast:    { color: '#0369a1', bg: '#e0f2fe', icon: '⚡', title: '과속 감량 — 칼로리를 약간 늘리세요',
+               text: '주 1kg 이상 감량은 근손실 위험이 큽니다. 단백질을 먼저 늘리고, 탄수화물 200~300kcal를 추가하세요. 식욕 억제가 강하더라도 단백질 목표는 반드시 채우세요.' },
+    optimal: { color: '#059669', bg: '#d1fae5', icon: '✅', title: '이상적 감량 속도 — 현재 식단을 유지하세요',
+               text: '주 0.5~1kg 감량은 근손실 없이 지방을 빼는 최적 속도입니다. 단백질·수분 목표를 꾸준히 유지하세요.' },
+    slow:    { color: '#b45309', bg: '#fef3c7', icon: '⚠️', title: '감량 속도 느림 — 칼로리 소모를 높이세요',
+               text: '식단 칼로리를 100~150kcal 줄이거나, 운동량을 늘리세요. 탄수화물·지방 섭취를 점검하고 단백질 비중을 높여 포만감을 유지하세요.' },
+    plateau: { color: '#6b7280', bg: '#f3f4f6', icon: '⏸', title: '체중 정체 — 식단 변화가 필요합니다',
+               text: '같은 식단이 오래되면 대사 적응이 생깁니다. 칼로리를 200kcal 줄이거나, 2주간 식단 구성(탄·단·지 비율)을 바꿔보세요. 저녁 탄수화물을 줄이는 것이 효과적입니다.' },
+    gaining: { color: '#dc2626', bg: '#fee2e2', icon: '🚨', title: '체중 증가 — 즉시 식단 점검 필요',
+               text: '약효가 있음에도 증가한다면 과식이나 야식, 고칼로리 음료가 원인일 수 있습니다. 오늘부터 식단 일지를 기록하고, 저녁 식사량을 줄이세요.' },
+  };
+  const rAdv = rateAdvisory[wRate.rate];
+
+  // ─ Zone-specific tips ───────────────────────────────
+  const ZONE_TIPS = {
+    peak: {
+      color: '#dc2626', bg: '#fee2e2', icon: '🔴', title: '고농도 구간 식단 전략',
+      tips: [
+        { icon: '🥩', text: '단백질 우선: 소화 부담 적은 닭가슴살·두부·계란·단백질 쉐이크로 목표량을 채우세요.' },
+        { icon: '🍲', text: '소량씩 자주(4~5회) 드세요. 오심이 심할 때는 차가운 단백질 음료가 도움됩니다.' },
+        { icon: '🚫', text: '기름진 음식·고지방 식품은 오심을 악화시킵니다. 피하세요.' },
+      ],
+      note: '식욕 저하가 심해도 단백질 목표는 반드시 채워야 근손실을 막을 수 있습니다.',
+    },
+    mid: {
+      color: '#059669', bg: '#d1fae5', icon: '🟢', title: '중간 농도 구간 식단 전략',
+      tips: [
+        { icon: '🥗', text: '영양 밀도 높은 식사: 채소 + 통곡물 + 저지방 단백질 조합이 이상적입니다.' },
+        { icon: '🍎', text: '저GI 탄수화물(현미·고구마·사과)으로 혈당 안정과 지방 연소를 동시에 잡으세요.' },
+        { icon: '💧', text: '하루 목표 수분을 꾸준히 섭취해 신진대사를 유지하세요.' },
+      ],
+      note: '지방 연소에 가장 유리한 구간. 과도한 칼로리 제한은 오히려 근손실을 유발합니다.',
+    },
+    low: {
+      color: '#d97706', bg: '#fef3c7', icon: '🟡', title: '저농도 구간 식단 전략',
+      tips: [
+        { icon: '🍽️', text: '식사 전 물 한 잔(250ml)으로 식욕을 조절하세요. 천천히 드시면 포만감이 일찍 옵니다.' },
+        { icon: '🥜', text: '고섬유질 식품(브로콜리·콩류·견과류)으로 포만감을 오래 유지하세요.' },
+        { icon: '📝', text: '식단 일지를 꼼꼼히 기록하세요. "보상 심리" 과식이 가장 위험한 구간입니다.' },
+      ],
+      note: '약효가 약해지는 구간. 식단 관리가 결과를 좌우합니다.',
+    },
+  };
+  const zTip = ZONE_TIPS[zoneInfo.zone];
+
+  el.innerHTML = `
+    ${targetHtml}
+    ${rAdv ? `
+    <div style="padding:10px 12px;background:${rAdv.bg};border-radius:9px;margin-bottom:10px;border-left:3px solid ${rAdv.color}">
+      <div style="font-size:11px;font-weight:700;color:${rAdv.color};margin-bottom:4px">${rAdv.icon} ${rAdv.title}</div>
+      <div style="font-size:12px;color:var(--gray-700);line-height:1.55">${rAdv.text}</div>
+    </div>` : ''}
+    <div style="padding:10px 12px;background:${zTip.bg};border-radius:9px;margin-bottom:10px">
+      <div style="font-size:11px;font-weight:700;color:${zTip.color};margin-bottom:8px">${zTip.icon} ${zTip.title}</div>
+      ${zTip.tips.map(t => `<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:6px">
+        <span style="font-size:14px;flex-shrink:0">${t.icon}</span>
         <div style="font-size:12px;color:var(--gray-700);line-height:1.5">${t.text}</div>
       </div>`).join('')}
     </div>
-    <div style="padding:8px 10px;background:white;border:1px solid ${g.color}44;border-radius:8px;font-size:11px;color:var(--gray-500);line-height:1.5">
-      💡 ${g.note}
+    <div style="padding:8px 10px;background:white;border:1px solid ${zTip.color}44;border-radius:8px;font-size:11px;color:var(--gray-500);line-height:1.5">
+      💡 ${zTip.note}
     </div>`;
+
+  // ─ Protein log progress ──────────────────────────────
+  const proteinSec = document.getElementById('protein-log-section');
+  if (proteinSec && currBw) {
+    const proteinMult2 = wRate.rate === 'fast' ? 2.0 : wRate.rate === 'optimal' ? 1.8 : 1.6;
+    const proteinTarget = Math.round(currBw * proteinMult2);
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const todayEntry = proteinLogs.find(p => p.date === todayStr);
+    const todayG = todayEntry ? todayEntry.grams : 0;
+    const pct = Math.min(100, Math.round(todayG / proteinTarget * 100));
+    const fillEl = document.getElementById('protein-progress-fill');
+    const consumedEl = document.getElementById('protein-consumed-label');
+    const pctEl = document.getElementById('protein-pct-label');
+    const targetLbl = document.getElementById('protein-target-label');
+    if (fillEl) fillEl.style.width = pct + '%';
+    if (consumedEl) consumedEl.textContent = todayG + 'g';
+    if (pctEl) { pctEl.textContent = pct + '%'; pctEl.style.color = pct >= 100 ? '#059669' : '#dc2626'; }
+    if (targetLbl) targetLbl.textContent = `목표 ${proteinTarget}g`;
+    proteinSec.style.display = '';
+  }
 }
 
 // ─── Render functions ─────────────────────────────────
@@ -2355,7 +3254,9 @@ function renderAll() {
   renderDoseOptimization();
   renderExerciseCard();
   renderTimeline();
+  renderIntegratedCoaching();
   renderWeeklyExerciseGoal();
+  renderSEPatternCard();
   renderDietAnalysis();
 }
 
@@ -2370,8 +3271,15 @@ function fmtFull(dateStr) {
 }
 
 function renderHome() {
-  // Next injection
+  // Onboarding / empty state visibility
+  const chartEmpty = document.getElementById('home-chart-empty');
+  const periodBar  = document.getElementById('home-chart-period-bar');
+  if (chartEmpty)  chartEmpty.style.display   = injections.length === 0 ? '' : 'none';
+  if (periodBar)   periodBar.style.display    = injections.length > 0   ? '' : 'none';
+
+  // Next injection banner
   const last = injections[injections.length - 1];
+  const banner = document.getElementById('next-dose-banner');
   if (last) {
     const lastD = new Date(last.date + 'T00:00:00');
     const nextD = new Date(lastD);
@@ -2382,17 +3290,47 @@ function renderHome() {
     document.getElementById('next-date').textContent = fmtFull(localDateStr(nextD));
     document.getElementById('next-dose-info').textContent = `현재 용량: ${last.dose}mg`;
 
-    let badge, bannerClass = 'next-dose-banner';
-    if (diff < 0) badge = `${Math.abs(diff)}일 지남 ⚠️`;
-    else if (diff === 0) badge = '오늘 주사일! 🔔';
-    else if (diff === 1) badge = '내일 주사일';
-    else badge = `${diff}일 후`;
+    let badge;
+    if (diff < 0) {
+      badge = `${Math.abs(diff)}일 지남 ⚠️`;
+      if (banner) banner.className = 'next-dose-banner overdue';
+    } else if (diff === 0) {
+      badge = '오늘 주사일! 🔔';
+      if (banner) banner.className = 'next-dose-banner today-due';
+    } else {
+      badge = diff === 1 ? '내일 주사일' : `${diff}일 후`;
+      if (banner) banner.className = 'next-dose-banner';
+    }
     document.getElementById('days-left').textContent = badge;
   }
 
-  // 총 투여 횟수 (배너 내 표시)
+  // 총 투여 횟수
   document.getElementById('stat-weeks').textContent = injections.length;
 
+  // Goal progress inside banner
+  const gpWrap = document.getElementById('goal-progress-wrap');
+  const gpFill = document.getElementById('goal-progress-fill');
+  const gpText = document.getElementById('goal-progress-text');
+  const gpPct  = document.getElementById('goal-progress-pct');
+  if (gpWrap && userProfile.targetWeight && weights.length > 0) {
+    const currW = weights[weights.length - 1].value;
+    const startW = weights[0].value;
+    const targetW = userProfile.targetWeight;
+    const totalLoss = startW - targetW;
+    const achieved  = startW - currW;
+    if (totalLoss > 0) {
+      const pct = Math.min(100, Math.max(0, Math.round(achieved / totalLoss * 100)));
+      const remaining = (currW - targetW).toFixed(1);
+      gpWrap.style.display = '';
+      gpFill.style.width = pct + '%';
+      gpText.textContent = remaining > 0 ? `목표까지 ${remaining}kg` : '목표 달성! 🎉';
+      gpPct.textContent = pct + '%';
+    } else {
+      gpWrap.style.display = 'none';
+    }
+  } else if (gpWrap) {
+    gpWrap.style.display = 'none';
+  }
 }
 
 function renderWeightChart() {
@@ -2685,6 +3623,134 @@ function testNotification() {
   }
   sendNotification('🔔 알림 테스트', '마운자로 트래커 알림이 정상 작동합니다!', 'mj-test');
   showToast('테스트 알림을 전송했습니다');
+}
+
+// ─── Team Management ──────────────────────────────────
+const TEAMS = [
+  { id: 'dev',    name: '개발팀',    icon: '💻', color: '#4f46e5', bg: '#e0e7ff',  duty: '구현 및 개발' },
+  { id: 'design', name: '디자인팀',  icon: '🎨', color: '#7c3aed', bg: '#ede9fe',  duty: 'UI/UX 설계' },
+  { id: 'qa',     name: 'QA팀',      icon: '🔍', color: '#0369a1', bg: '#e0f2fe',  duty: '테스트 및 검증' },
+  { id: 'data',   name: '데이터팀',  icon: '📊', color: '#059669', bg: '#d1fae5',  duty: '분석 및 모니터링' },
+];
+
+let teamTasks = DB.get('mj_team_tasks', []);
+let selectedTaskPri = null;
+
+function openTaskModal() {
+  selectedTaskPri = null;
+  document.getElementById('tm-title').value = '';
+  document.getElementById('tm-desc').value = '';
+  document.querySelectorAll('#tm-priority-grid .dose-opt').forEach(el => el.classList.remove('selected'));
+  document.getElementById('task-modal-overlay').classList.add('open');
+}
+
+function closeTaskModal() {
+  document.getElementById('task-modal-overlay').classList.remove('open');
+}
+
+function handleTaskModalClick(e) {
+  if (e.target === document.getElementById('task-modal-overlay')) closeTaskModal();
+}
+
+function selectTaskPriority(el) {
+  document.querySelectorAll('#tm-priority-grid .dose-opt').forEach(x => x.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedTaskPri = el.dataset.pri;
+}
+
+function createTask() {
+  const title = document.getElementById('tm-title').value.trim();
+  if (!title) { showToast('태스크 제목을 입력해주세요'); return; }
+  if (!selectedTaskPri) { showToast('우선순위를 선택해주세요'); return; }
+  const desc = document.getElementById('tm-desc').value.trim();
+  const taskId = Date.now();
+  const dateStr = todayStr();
+
+  const subtasks = TEAMS.map(t => ({
+    teamId: t.id,
+    title: `[${title}] ${t.duty}`,
+    status: 'todo',
+  }));
+
+  const task = { id: taskId, title, desc, priority: selectedTaskPri, date: dateStr, subtasks };
+  teamTasks.push(task);
+  DB.set('mj_team_tasks', teamTasks);
+  closeTaskModal();
+  renderTeam();
+  showToast(`"${title}" 태스크가 4개 팀에 배분되었습니다`);
+}
+
+function cycleSubtaskStatus(taskId, teamId) {
+  const task = teamTasks.find(t => t.id === taskId);
+  if (!task) return;
+  const sub = task.subtasks.find(s => s.teamId === teamId);
+  if (!sub) return;
+  const cycle = ['todo', 'doing', 'done'];
+  sub.status = cycle[(cycle.indexOf(sub.status) + 1) % cycle.length];
+  DB.set('mj_team_tasks', teamTasks);
+  renderTeam();
+}
+
+function deleteTask(taskId) {
+  if (!confirm('태스크를 삭제할까요?')) return;
+  teamTasks = teamTasks.filter(t => t.id !== taskId);
+  DB.set('mj_team_tasks', teamTasks);
+  renderTeam();
+}
+
+function renderTeam() {
+  const board = document.getElementById('team-board');
+  if (!board) return;
+
+  // Update stats
+  const allSubs = teamTasks.flatMap(t => t.subtasks);
+  document.getElementById('ts-total').textContent = teamTasks.length;
+  document.getElementById('ts-doing').textContent = allSubs.filter(s => s.status === 'doing').length;
+  document.getElementById('ts-done').textContent  = allSubs.filter(s => s.status === 'done').length;
+
+  if (teamTasks.length === 0) {
+    board.innerHTML = `<div class="empty-state" style="padding:28px">
+      <div class="empty-icon">📋</div>
+      <p>아직 태스크가 없습니다<br><span style="font-size:11px;color:var(--gray-400)">위 버튼으로 첫 태스크를 만들어보세요</span></p>
+    </div>`;
+    return;
+  }
+
+  const statusLabel = { todo: '대기', doing: '진행중', done: '완료' };
+  const priLabel    = { high: '높음', mid: '중간', low: '낮음' };
+
+  board.innerHTML = TEAMS.map(team => {
+    const subs = teamTasks.map(task => {
+      const sub = task.subtasks.find(s => s.teamId === team.id);
+      if (!sub) return '';
+      return `<div class="task-card priority-${task.priority}">
+        <div class="task-top">
+          <div class="task-title">${sub.title}</div>
+        </div>
+        <div class="task-bottom">
+          <button class="status-badge ${sub.status}" onclick="cycleSubtaskStatus(${task.id},'${team.id}')">${
+            sub.status === 'todo' ? '⏸ ' : sub.status === 'doing' ? '▶ ' : '✓ '
+          }${statusLabel[sub.status]}</button>
+          <span class="priority-badge ${task.priority}">${priLabel[task.priority]}</span>
+          <span class="task-date">${task.date}</span>
+          <button onclick="deleteTask(${task.id})" style="margin-left:auto;background:none;border:none;color:var(--gray-400);cursor:pointer;font-size:13px;padding:0 2px" title="삭제">✕</button>
+        </div>
+      </div>`;
+    }).join('');
+
+    const teamSubCount = teamTasks.filter(t => t.subtasks.some(s => s.teamId === team.id && s.status !== 'done')).length;
+
+    return `<div class="team-section">
+      <div class="card" style="padding:12px">
+        <div class="team-header">
+          <div class="team-icon" style="background:${team.bg};color:${team.color}">${team.icon}</div>
+          <div class="team-name" style="color:${team.color}">${team.name}</div>
+          ${teamSubCount > 0 ? `<div class="team-count">${teamSubCount}개 진행</div>` : ''}
+        </div>
+        ${subs || `<div style="font-size:12px;color:var(--gray-400);padding:4px 0">배정된 태스크 없음</div>`}
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // ─── Generate app icon via Canvas ─────────────────────
