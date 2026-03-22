@@ -957,8 +957,11 @@
       <div class="card">
         <div class="card-title">주사 기록 추가</div>
         <div class="form-group">
-          <label>주사 날짜</label>
-          <input type="date" id="inj-date">
+          <label>주사 날짜 · 시간</label>
+          <div style="display:flex;gap:8px">
+            <input type="date" id="inj-date" style="flex:1;min-width:0">
+            <input type="time" id="inj-time" style="width:112px">
+          </div>
         </div>
         <div class="form-group">
           <label>용량 선택</label>
@@ -1399,6 +1402,11 @@ function initDates() {
     const el = document.getElementById(id);
     if (el && !el.value) el.value = t;
   });
+  const timeEl = document.getElementById('inj-time');
+  if (timeEl && !timeEl.value) {
+    const now = new Date();
+    timeEl.value = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+  }
 }
 
 // ─── Selectors ────────────────────────────────────────
@@ -1451,20 +1459,32 @@ function selectSev(el) {
 }
 
 // ─── Save functions ───────────────────────────────────
+// 주사 기록 타임스탬프 — time 없는 기존 기록은 12:00 기본값
+function injDateMs(inj) {
+  return new Date(inj.date + 'T' + (inj.time || '12:00') + ':00').getTime();
+}
+
 function saveInjection() {
   const date = document.getElementById('inj-date').value;
+  const time = document.getElementById('inj-time').value || (() => {
+    const now = new Date();
+    return String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+  })();
   const memo = document.getElementById('inj-memo').value;
   if (!date) { showToast('날짜를 선택해주세요'); return; }
   if (!selectedDose) { showToast('용량을 선택해주세요'); return; }
   if (!selectedSite) { showToast('주사 부위를 선택해주세요'); return; }
 
-  injections.push({ date, dose: selectedDose, site: selectedSite, memo, id: Date.now() });
-  injections.sort((a, b) => a.date.localeCompare(b.date));
+  injections.push({ date, time, dose: selectedDose, site: selectedSite, memo, id: Date.now() });
+  injections.sort((a, b) => injDateMs(a) - injDateMs(b));
   DB.set('mj_injections', injections);
 
   // reset
   document.querySelectorAll('.dose-opt, .site-opt').forEach(e => e.classList.remove('selected'));
   document.getElementById('inj-memo').value = '';
+  const now2 = new Date();
+  const tEl = document.getElementById('inj-time');
+  if (tEl) tEl.value = String(now2.getHours()).padStart(2, '0') + ':' + String(now2.getMinutes()).padStart(2, '0');
   selectedDose = null; selectedSite = null;
   showToast('주사 기록이 저장되었습니다 💉');
   renderAll();
@@ -1640,7 +1660,7 @@ function ccInit() {
 
 function ccReset() {
   const allMs = [
-    ...injections.map(i => new Date(i.date + 'T12:00:00').getTime()),
+    ...injections.map(i => injDateMs(i)),
     ...weights.map(w => new Date(w.date + 'T12:00:00').getTime()),
   ];
   const now = Date.now();
@@ -1693,7 +1713,7 @@ function ccHomeInit() {
   // Only reset view on first open; preserve pan/zoom thereafter
   if (CC_HOME.v0 === 0 && CC_HOME.v1 === 0) {
     const allMs = [
-      ...injections.map(i => new Date(i.date + 'T12:00:00').getTime()),
+      ...injections.map(i => injDateMs(i)),
       ...weights.map(w => new Date(w.date + 'T12:00:00').getTime()),
     ];
     const now = Date.now();
@@ -1875,7 +1895,7 @@ function ccDraw(inst) {
 
   // ── Injection day bands ───────────────────────────────
   for (const inj of injections) {
-    const x = xOf(new Date(inj.date + 'T12:00:00').getTime());
+    const x = xOf(injDateMs(inj));
     if (x < pL - 1 || x > pL + plotW + 1) continue;
     ctx.strokeStyle = 'rgba(99,102,241,0.22)';
     ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
@@ -1967,7 +1987,7 @@ function ccDraw(inst) {
   // ── Injection triangles (above plot) ─────────────────
   let lastInjLabelX = -Infinity;
   for (const inj of injections) {
-    const x = xOf(new Date(inj.date + 'T12:00:00').getTime());
+    const x = xOf(injDateMs(inj));
     if (x < pL || x > pL + plotW) continue;
     if (x - lastInjLabelX < 22) continue;
     lastInjLabelX = x;
@@ -2068,7 +2088,7 @@ function pkProfile(hours) {
 function calcDrugLevelAt(ms) {
   let total = 0;
   for (const inj of injections) {
-    const injMs = new Date(inj.date + 'T12:00:00').getTime();
+    const injMs = injDateMs(inj);
     const hours = (ms - injMs) / 3600000;
     if (hours < 0) continue;
     total += parseFloat(inj.dose) * pkProfile(hours);
@@ -2258,12 +2278,12 @@ function calcDoseOptimization() {
 
   // 2. Adherence rate (last 8 weeks)
   const w56 = nowMs - 56 * DAY;
-  const recentInj = injections.filter(i => new Date(i.date + 'T12:00:00').getTime() >= w56);
+  const recentInj = injections.filter(i => injDateMs(i) >= w56);
   const alpha = Math.min(recentInj.length / 8, 1);
 
   // 3. Concentration sufficiency (η)
   const last = injections[injections.length - 1];
-  const lastMs = new Date(last.date + 'T12:00:00').getTime();
+  const lastMs = injDateMs(last);
   const currentDose = parseFloat(last.dose);
   const wDecay  = Math.pow(0.5, 7 / HALF_LIFE);
   const ssPeak  = currentDose / (1 - wDecay);
@@ -2837,7 +2857,7 @@ function setChartPeriod(days) {
   if (days === 0) {
     // Show all
     const allMs = [
-      ...injections.map(i => new Date(i.date + 'T12:00:00').getTime()),
+      ...injections.map(i => injDateMs(i)),
       ...weights.map(w => new Date(w.date + 'T12:00:00').getTime()),
     ];
     CC_HOME.v0 = allMs.length ? Math.min(...allMs) - 5*DAY : now - 30*DAY;
@@ -3467,7 +3487,7 @@ function renderInjList() {
   el.innerHTML = [...injections].reverse().map(i => `
     <div class="log-item">
       <div>
-        <div class="log-date">${fmt(i.date)}</div>
+        <div class="log-date">${fmt(i.date)}${i.time ? `<span style="font-size:11px;color:var(--gray-400);margin-left:5px">${i.time}</span>` : ''}</div>
         <div class="log-main">${i.site} <span class="dose-badge">${i.dose}mg</span></div>
         ${i.memo ? `<div class="log-sub">${i.memo}</div>` : ''}
       </div>
@@ -3602,7 +3622,7 @@ function checkNotifications() {
   // 투약일 알림
   if (s.injection && injections.length > 0) {
     const last = injections[injections.length - 1];
-    const nextMs = new Date(last.date + 'T12:00:00').getTime() + 7 * 86400000;
+    const nextMs = injDateMs(last) + 7 * 86400000;
     const daysOverdue = (Date.now() - nextMs) / 86400000;
     const lastNotifDay = localStorage.getItem('mj_last_injection_notif');
     if (daysOverdue >= 0 && lastNotifDay !== today) {
