@@ -143,35 +143,30 @@
     margin-bottom: 12px;
   }
 
-  /* Next Dose Banner */
+  /* Next Dose — compact one-line strip */
   .next-dose-banner {
-    background: linear-gradient(135deg, var(--primary), #7c3aed);
-    color: white;
-    border-radius: var(--radius);
-    padding: 12px 16px;
-    margin-bottom: 12px;
-    position: relative;
-    overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: var(--primary-light);
+    color: var(--primary);
+    flex-shrink: 0;
   }
-  .next-dose-banner::after {
-    content: '';
-    position: absolute;
-    right: -20px; top: -20px;
-    width: 100px; height: 100px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.1);
-  }
-  .next-dose-label { font-size: 11px; opacity: 0.85; margin-bottom: 2px; }
-  .next-dose-date { font-size: 19px; font-weight: 700; margin-bottom: 2px; }
-  .next-dose-sub { font-size: 12px; opacity: 0.85; }
+  .next-dose-banner::after { display: none; }
+  .next-dose-label { font-size: 11px; opacity: 0.8; flex-shrink: 0; }
+  .next-dose-date  { font-size: 13px; font-weight: 700; }
+  .next-dose-sub   { display: none; }
   .days-badge {
-    display: inline-block;
-    background: rgba(255,255,255,0.25);
+    background: var(--primary);
+    color: white;
     border-radius: 20px;
-    padding: 3px 10px;
-    font-size: 12px;
-    font-weight: 600;
-    margin-top: 7px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+    display: inline-block;
   }
 
   /* Stats Row */
@@ -449,10 +444,10 @@
     .dose-grid { grid-template-columns: repeat(2, 1fr); }
     .stats-row { grid-template-columns: 1fr 1fr; }
     .stat-val { font-size: 18px; }
-    .next-dose-date { font-size: 16px; }
     .coaching-grid { grid-template-columns: 1fr; }
     .card { padding: 12px; }
     .section { padding: 10px 12px; }
+    #tab-home { padding: 6px 10px; }
   }
 
   /* Responsive — 320px 이하 (Galaxy A 구형, iPod touch 등 극소형) */
@@ -634,12 +629,10 @@
   .section.active { animation: tabFadeIn 0.18s ease; }
 
   /* ─── Overdue Banner Variant ──────────────────── */
-  .next-dose-banner.overdue {
-    background: linear-gradient(135deg, #dc2626, #b91c1c);
-  }
-  .next-dose-banner.today-due {
-    background: linear-gradient(135deg, #d97706, #b45309);
-  }
+  .next-dose-banner.overdue   { background: var(--danger-light);  color: var(--danger); }
+  .next-dose-banner.today-due { background: var(--warning-light); color: #92400e; }
+  .next-dose-banner.overdue   .days-badge { background: var(--danger); }
+  .next-dose-banner.today-due .days-badge { background: #d97706; }
 
   /* ─── Goal Progress Banner ────────────────────── */
   .goal-progress-wrap {
@@ -908,6 +901,27 @@
     max-height: 80vh; max-height: 80svh; overflow-y: auto;
   }
   .task-modal-overlay.open .task-modal { transform: translateY(0); }
+
+  /* ─── Home Tab: no-scroll flex layout ──────────── */
+  #tab-home {
+    overflow: hidden;
+    padding: 8px 12px;
+  }
+  #tab-home.active {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  #home-chart-card {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    margin-bottom: 0;
+  }
+  #dose-opt-card {
+    flex-shrink: 0;
+    margin-bottom: 0;
+  }
 </style>
 </head>
 <body>
@@ -932,11 +946,21 @@
 
 <div class="main-content">
 
-  <!-- HOME TAB -->
+  <!-- HOME TAB: flex column, no scroll -->
   <div class="section active" id="tab-home">
 
-    <!-- 통합 카드: 농도·체중 그래프 + 잔류 농도 + 체중 변화 -->
-    <div class="card" id="home-chart-card" style="padding:14px;min-height:200px">
+    <!-- ① 다음 주사 예정일: 최상단 한 줄 스트립 -->
+    <div id="next-dose-banner" class="next-dose-banner">
+      <span style="font-size:15px;flex-shrink:0">💉</span>
+      <span class="next-dose-label">다음 주사</span>
+      <span class="next-dose-date" id="next-date">-</span>
+      <span class="days-badge" id="days-left">-</span>
+      <span style="margin-left:auto;font-size:11px;opacity:0.7;flex-shrink:0;font-weight:600">총 <span id="stat-weeks">0</span>회</span>
+      <span id="next-dose-info" style="display:none"></span>
+    </div>
+
+    <!-- ② 차트 카드: flex:1 로 남은 화면 채움 -->
+    <div class="card" id="home-chart-card" style="padding:14px">
       <div id="home-chart-empty" style="text-align:center;padding:30px 0 20px;color:var(--gray-500);font-size:13px">
         <div style="font-size:36px;margin-bottom:10px">💉</div>
         <div style="font-weight:600;color:var(--gray-700);margin-bottom:4px">첫 주사 기록을 추가하세요</div>
@@ -945,45 +969,10 @@
           + 첫 주사 기록 추가
         </button>
       </div>
-      <div id="home-chart-period-bar" class="chart-period-bar" style="display:none">
-        <button class="chart-period-btn" onclick="setChartPeriod(30)">1개월</button>
-        <button class="chart-period-btn" onclick="setChartPeriod(90)">3개월</button>
-        <button class="chart-period-btn" onclick="setChartPeriod(180)">6개월</button>
-        <button class="chart-period-btn active" onclick="setChartPeriod(0)">전체</button>
-      </div>
     </div>
 
-    <!-- Algorithm C: Dose Optimization Card -->
-    <div class="card" id="dose-opt-card" style="display:none;padding:10px 14px;margin-bottom:8px"></div>
-
-    <div id="next-dose-banner" class="next-dose-banner">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start">
-        <div>
-          <div class="next-dose-label">다음 주사 예정일</div>
-          <div class="next-dose-date" id="next-date">-</div>
-          <div class="next-dose-sub" id="next-dose-info">아직 주사 기록이 없습니다</div>
-        </div>
-        <div style="text-align:right;opacity:0.92;flex-shrink:0;margin-left:8px">
-          <div style="font-size:9px;opacity:0.8;letter-spacing:0.03em">총 투여</div>
-          <div id="stat-weeks" style="font-size:24px;font-weight:800;line-height:1">0</div>
-          <div style="font-size:9px;opacity:0.8">회</div>
-        </div>
-      </div>
-      <div class="days-badge" id="days-left">기록을 추가해주세요</div>
-      <!-- Goal progress inside banner -->
-      <div id="goal-progress-wrap" style="display:none" class="goal-progress-wrap">
-        <div class="goal-progress-label">
-          <span id="goal-progress-text">목표까지</span>
-          <span id="goal-progress-pct"></span>
-        </div>
-        <div class="goal-progress-track">
-          <div class="goal-progress-fill" id="goal-progress-fill" style="width:0%"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Algorithm A: Food Noise Alert -->
-    <div id="food-noise-alert"></div>
+    <!-- ③ 투여 최적화 분석: 데이터 있을 때만 표시, 고정 높이 -->
+    <div class="card" id="dose-opt-card" style="display:none;padding:10px 14px"></div>
 
   </div>
 
@@ -1703,7 +1692,7 @@ function ccHomeInit() {
 
   const container = CC_HOME.el.parentElement;
   const cssW = Math.max(220, container.clientWidth || 340);
-  const cssH = Math.round(Math.min(300, Math.max(220, cssW * 0.72)));
+  const cssH = Math.round(Math.min(200, Math.max(150, cssW * 0.50)));
   CC_HOME.el.style.width  = cssW + 'px';
   CC_HOME.el.style.height = cssH + 'px';
   CC_HOME.el.width  = Math.round(cssW * CC_HOME.dpr);
