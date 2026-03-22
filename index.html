@@ -68,7 +68,8 @@
   .app-shell {
     display: flex;
     flex-direction: column;
-    height: 100dvh; /* dynamic viewport height */
+    height: 100vh;   /* fallback for older browsers */
+    height: 100dvh;  /* dynamic viewport height (hides browser chrome) */
     max-width: 480px;
     margin: 0 auto;
     overflow: hidden;
@@ -362,9 +363,9 @@
   /* Toast */
   .toast {
     position: fixed;
-    bottom: 24px;
+    bottom: calc(max(4px, env(safe-area-inset-bottom)) + 64px);
     left: 50%;
-    transform: translateX(-50%) translateY(100px);
+    transform: translateX(-50%) translateY(120px);
     background: var(--gray-900);
     color: white;
     padding: 12px 20px;
@@ -374,6 +375,7 @@
     transition: transform 0.3s ease;
     z-index: 999;
     white-space: nowrap;
+    max-width: calc(100vw - 40px);
   }
   .toast.show { transform: translateX(-50%) translateY(0); }
 
@@ -442,10 +444,28 @@
   }
   .header-btn:hover { background: var(--gray-100); color: var(--gray-700); }
 
-  /* Responsive */
+  /* Responsive — 360px 이하 (소형 Android, iPhone SE 1세대) */
   @media (max-width: 360px) {
     .dose-grid { grid-template-columns: repeat(2, 1fr); }
     .stats-row { grid-template-columns: 1fr 1fr; }
+    .stat-val { font-size: 18px; }
+    .next-dose-date { font-size: 16px; }
+    .coaching-grid { grid-template-columns: 1fr; }
+    .card { padding: 12px; }
+    .section { padding: 10px 12px; }
+  }
+
+  /* Responsive — 320px 이하 (Galaxy A 구형, iPod touch 등 극소형) */
+  @media (max-width: 320px) {
+    .header h1 { font-size: 15px; }
+    .header p  { font-size: 11px; }
+    .nav-btn   { font-size: 9px; }
+    .subtab-btn { font-size: 11px; padding: 7px 2px; }
+    .level-meta-grid { grid-template-columns: 1fr 1fr; }
+    .diet-targets-row { grid-template-columns: 1fr 1fr; }
+    .ex-type-grid { grid-template-columns: 1fr 1fr; }
+    .team-stats-row { grid-template-columns: 1fr 1fr; }
+    .section { padding: 8px 10px; }
   }
 
   /* Exercise Zone Pills */
@@ -505,7 +525,9 @@
     padding: 16px 20px calc(32px + env(safe-area-inset-bottom)); width: 100%; max-width: 480px;
     transform: translateY(100%);
     transition: transform 0.3s cubic-bezier(0.32,0.72,0,1);
-    max-height: 75vh; overflow-y: auto;
+    max-height: 75vh;
+    max-height: 75svh;
+    overflow-y: auto;
   }
   .sheet-overlay.open .bottom-sheet { transform: translateY(0); }
   .sheet-handle {
@@ -883,7 +905,7 @@
     padding: 16px 20px calc(28px + env(safe-area-inset-bottom));
     width: 100%; max-width: 480px;
     transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32,0.72,0,1);
-    max-height: 80vh; overflow-y: auto;
+    max-height: 80vh; max-height: 80svh; overflow-y: auto;
   }
   .task-modal-overlay.open .task-modal { transform: translateY(0); }
 </style>
@@ -914,7 +936,7 @@
   <div class="section active" id="tab-home">
 
     <!-- 통합 카드: 농도·체중 그래프 + 잔류 농도 + 체중 변화 -->
-    <div class="card" id="home-chart-card" style="padding:14px;min-height:44vh">
+    <div class="card" id="home-chart-card" style="padding:14px;min-height:200px">
       <div id="home-chart-empty" style="text-align:center;padding:30px 0 20px;color:var(--gray-500);font-size:13px">
         <div style="font-size:36px;margin-bottom:10px">💉</div>
         <div style="font-weight:600;color:var(--gray-700);margin-bottom:4px">첫 주사 기록을 추가하세요</div>
