@@ -1692,7 +1692,12 @@ function ccHomeInit() {
 
   const container = CC_HOME.el.parentElement;
   const cssW = Math.max(220, container.clientWidth || 340);
-  const cssH = Math.round(Math.min(200, Math.max(150, cssW * 0.50)));
+  // 카드 실제 높이에서 title+legend+stats+warning+padding (~178px) 을 빼서 캔버스 높이 결정
+  const card = document.getElementById('home-chart-card');
+  const cardH = card ? card.clientHeight : 0;
+  const cssH = cardH > 230
+    ? Math.max(150, cardH - 178)
+    : Math.round(Math.min(200, Math.max(150, cssW * 0.50)));
   CC_HOME.el.style.width  = cssW + 'px';
   CC_HOME.el.style.height = cssH + 'px';
   CC_HOME.el.width  = Math.round(cssW * CC_HOME.dpr);
@@ -2236,7 +2241,7 @@ function renderDrugLevel() {
     })()}
     <div style="font-size:9px;color:var(--gray-400)">⚠️ 참고용 추정값 · 의학적 판단 불가</div>`;
 
-  setTimeout(ccHomeInit, 30);
+  setTimeout(ccHomeInit, 60);
 }
 
 // ─── Algorithm A: Food Noise Alert Engine ─────────────
