@@ -33,7 +33,10 @@
     --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
   }
 
-  html { height: 100%; }
+  html {
+    height: 100dvh; /* dvh 기준으로 체인 시작 */
+    height: 100%;   /* 폴백 */
+  }
 
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -68,8 +71,7 @@
   .app-shell {
     display: flex;
     flex-direction: column;
-    height: 100vh;   /* fallback for older browsers */
-    height: 100dvh;  /* dynamic viewport height (hides browser chrome) */
+    height: 100%; /* html→body→app-shell 100% 체인: dvh 기준으로 일관성 유지 */
     max-width: 480px;
     margin: 0 auto;
     overflow: hidden;
@@ -101,8 +103,8 @@
     display: flex;
     background: white;
     border-top: 1px solid var(--gray-200);
-    padding: 4px 0;
-    padding-bottom: max(4px, env(safe-area-inset-bottom));
+    padding: 2px 0 0;
+    padding-bottom: env(safe-area-inset-bottom);
   }
   .nav-btn {
     flex: 1;
@@ -358,21 +360,27 @@
   /* Toast */
   .toast {
     position: fixed;
-    bottom: calc(max(4px, env(safe-area-inset-bottom)) + 64px);
+    bottom: calc(env(safe-area-inset-bottom) + 64px);
     left: 50%;
-    transform: translateX(-50%) translateY(120px);
+    transform: translateX(-50%) translateY(20px);
+    opacity: 0;
     background: var(--gray-900);
     color: white;
     padding: 12px 20px;
     border-radius: 30px;
     font-size: 14px;
     font-weight: 500;
-    transition: transform 0.3s ease;
+    transition: transform 0.28s ease, opacity 0.28s ease;
     z-index: 999;
     white-space: nowrap;
     max-width: calc(100vw - 40px);
+    pointer-events: none;
   }
-  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
 
   /* Divider */
   .divider { height: 1px; background: var(--gray-100); margin: 12px 0; }
@@ -914,6 +922,7 @@
   }
   #home-chart-card {
     flex: 1;
+    height: 0;      /* flex가 높이를 완전히 제어하게 함 */
     min-height: 0;
     overflow: hidden;
     margin-bottom: 0;
@@ -1690,9 +1699,24 @@ function ccHomeInit() {
   CC_HOME.ctx = CC_HOME.el.getContext('2d');
   CC_HOME.dpr = Math.min(window.devicePixelRatio || 1, 2);
 
+  const card = document.getElementById('home-chart-card');
   const container = CC_HOME.el.parentElement;
-  const cssW = Math.max(220, container.clientWidth || 340);
-  const cssH = Math.round(Math.min(200, Math.max(150, cssW * 0.50)));
+  const cssW = Math.max(220, CC_HOME.el.offsetWidth || container.clientWidth || 340);
+
+  // 카드 실제 높이(flex:1 + height:0 으로 정확함)에서
+  // canvas 이외의 모든 형제 요소 높이 합을 빼서 canvas 높이 결정
+  let siblingH = 0;
+  if (card) {
+    const cardStyle = getComputedStyle(card);
+    const padV = parseFloat(cardStyle.paddingTop) + parseFloat(cardStyle.paddingBottom);
+    for (const child of card.children) {
+      if (child !== CC_HOME.el) siblingH += child.offsetHeight;
+    }
+    siblingH += padV;
+  }
+  const cardH = card ? card.clientHeight : 0;
+  const cssH = Math.max(150, cardH > 0 ? cardH - siblingH : Math.round(cssW * 0.55));
+
   CC_HOME.el.style.width  = cssW + 'px';
   CC_HOME.el.style.height = cssH + 'px';
   CC_HOME.el.width  = Math.round(cssW * CC_HOME.dpr);
@@ -2236,7 +2260,8 @@ function renderDrugLevel() {
     })()}
     <div style="font-size:9px;color:var(--gray-400)">⚠️ 참고용 추정값 · 의학적 판단 불가</div>`;
 
-  setTimeout(ccHomeInit, 30);
+  // rAF로 flex 레이아웃 완료 후 canvas 버퍼 크기 결정
+  requestAnimationFrame(() => requestAnimationFrame(ccHomeInit));
 }
 
 // ─── Algorithm A: Food Noise Alert Engine ─────────────
@@ -3516,9 +3541,10 @@ function resetData() {
 // ─── Toast ────────────────────────────────────────────
 function showToast(msg) {
   const t = document.getElementById('toast');
+  clearTimeout(t._tid);
   t.textContent = msg;
   t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
+  t._tid = setTimeout(() => t.classList.remove('show'), 2500);
 }
 
 // ─── Init ─────────────────────────────────────────────
