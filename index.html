@@ -176,6 +176,7 @@
   label { display: block; font-size: 13px; font-weight: 500; color: var(--gray-700); margin-bottom: 5px; }
   input, select, textarea {
     width: 100%;
+    max-width: 100%;
     padding: 10px 12px;
     border: 1px solid var(--gray-300);
     border-radius: 8px;
@@ -185,6 +186,13 @@
     background: white;
     transition: border-color 0.15s;
     outline: none;
+    box-sizing: border-box;
+  }
+  input[type="date"] {
+    -webkit-appearance: none;
+    appearance: none;
+    font-size: 14px;
+    min-width: 0;
   }
   input:focus, select:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,0.1); }
   textarea { resize: vertical; min-height: 70px; }
@@ -516,6 +524,131 @@
   /* Exercise goal ring */
   .goal-ring-wrap { display: flex; flex-direction: column; align-items: center; padding: 8px 0 4px; }
   .goal-ring-label { font-size: 12px; color: var(--gray-500); margin-top: 4px; }
+
+  /* ─── Team Tab ─────────────────────────────────── */
+  .owner-banner {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    border-radius: var(--radius);
+    padding: 16px;
+    color: white;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .owner-avatar {
+    width: 44px; height: 44px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+  .owner-name { font-size: 15px; font-weight: 700; }
+  .owner-sub  { font-size: 11px; opacity: 0.85; margin-top: 2px; }
+
+  .team-stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .team-stat-card {
+    background: white;
+    border-radius: 10px;
+    padding: 10px;
+    text-align: center;
+    box-shadow: var(--shadow);
+  }
+  .team-stat-num  { font-size: 20px; font-weight: 800; color: var(--primary); }
+  .team-stat-label{ font-size: 10px; color: var(--gray-500); margin-top: 2px; }
+
+  .task-create-btn {
+    width: 100%;
+    padding: 13px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    margin-bottom: 12px;
+    transition: background 0.15s;
+  }
+  .task-create-btn:hover { background: #4338ca; }
+
+  .team-section { margin-bottom: 12px; }
+  .team-header {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 8px;
+  }
+  .team-icon {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; flex-shrink: 0;
+  }
+  .team-name { font-size: 13px; font-weight: 700; color: var(--gray-900); }
+  .team-count {
+    margin-left: auto;
+    font-size: 11px; font-weight: 600;
+    background: var(--primary-light); color: var(--primary);
+    padding: 2px 8px; border-radius: 10px;
+  }
+
+  .task-card {
+    background: white;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    border-left: 3px solid var(--gray-200);
+  }
+  .task-card.priority-high  { border-left-color: var(--danger); }
+  .task-card.priority-mid   { border-left-color: var(--warning); }
+  .task-card.priority-low   { border-left-color: var(--success); }
+
+  .task-top { display: flex; align-items: flex-start; gap: 6px; margin-bottom: 4px; }
+  .task-title { font-size: 13px; font-weight: 600; color: var(--gray-900); flex: 1; }
+  .task-sub   { font-size: 11px; color: var(--gray-500); margin-bottom: 6px; }
+  .task-bottom{ display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+  .status-badge {
+    font-size: 10px; font-weight: 600; padding: 2px 8px;
+    border-radius: 10px; cursor: pointer; transition: all 0.15s;
+    border: none; display: inline-flex; align-items: center; gap: 3px;
+  }
+  .status-badge.todo     { background: var(--gray-100); color: var(--gray-500); }
+  .status-badge.doing    { background: #dbeafe; color: #1d4ed8; }
+  .status-badge.done     { background: var(--success-light); color: #059669; }
+
+  .priority-badge {
+    font-size: 10px; font-weight: 600; padding: 2px 7px;
+    border-radius: 10px;
+  }
+  .priority-badge.high { background: var(--danger-light); color: var(--danger); }
+  .priority-badge.mid  { background: var(--warning-light); color: #b45309; }
+  .priority-badge.low  { background: var(--success-light); color: #059669; }
+
+  .task-date { font-size: 10px; color: var(--gray-400); margin-left: auto; }
+
+  /* Task modal overlay */
+  .task-modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45); z-index: 300;
+    display: flex; align-items: flex-end; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .task-modal-overlay.open { opacity: 1; pointer-events: auto; }
+  .task-modal {
+    background: white; border-radius: 20px 20px 0 0;
+    padding: 16px 20px calc(28px + env(safe-area-inset-bottom));
+    width: 100%; max-width: 480px;
+    transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32,0.72,0,1);
+    max-height: 80vh; overflow-y: auto;
+  }
+  .task-modal-overlay.open .task-modal { transform: translateY(0); }
 </style>
 </head>
 <body>
@@ -547,6 +680,7 @@
   <button class="nav-btn active" onclick="showTab('home')">홈</button>
   <button class="nav-btn" onclick="showTab('record')">기록</button>
   <button class="nav-btn" onclick="showTab('analysis')">루틴</button>
+  <button class="nav-btn" onclick="showTab('team')">팀</button>
 </nav>
 
 <div class="main">
@@ -744,6 +878,68 @@
       <div style="display:flex;gap:8px">
         <button class="btn" style="flex:1;background:var(--danger-light);color:var(--danger);justify-content:center" onclick="resetData()">전체 초기화</button>
       </div>
+    </div>
+  </div>
+
+  <!-- TEAM TAB -->
+  <div class="section" id="tab-team">
+    <!-- 오너 배너 -->
+    <div class="owner-banner">
+      <div class="owner-avatar">👑</div>
+      <div>
+        <div class="owner-name">대표 (오너)</div>
+        <div class="owner-sub">마운자로트래커 1인 기업 CEO</div>
+      </div>
+    </div>
+
+    <!-- 요약 통계 -->
+    <div class="team-stats-row">
+      <div class="team-stat-card">
+        <div class="team-stat-num" id="ts-total">0</div>
+        <div class="team-stat-label">전체 태스크</div>
+      </div>
+      <div class="team-stat-card">
+        <div class="team-stat-num" id="ts-doing" style="color:#1d4ed8">0</div>
+        <div class="team-stat-label">진행중</div>
+      </div>
+      <div class="team-stat-card">
+        <div class="team-stat-num" id="ts-done" style="color:var(--success)">0</div>
+        <div class="team-stat-label">완료</div>
+      </div>
+    </div>
+
+    <!-- 태스크 생성 버튼 -->
+    <button class="task-create-btn" onclick="openTaskModal()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      새 태스크 생성
+    </button>
+
+    <!-- 팀별 보드 -->
+    <div id="team-board"></div>
+  </div>
+
+  <!-- 태스크 생성 모달 -->
+  <div class="task-modal-overlay" id="task-modal-overlay" onclick="handleTaskModalClick(event)">
+    <div class="task-modal">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">새 태스크 생성</div>
+      <div class="form-group">
+        <label>태스크 제목</label>
+        <input type="text" id="tm-title" placeholder="예: 다크 모드 추가">
+      </div>
+      <div class="form-group">
+        <label>설명 (선택)</label>
+        <textarea id="tm-desc" placeholder="태스크 상세 내용..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>우선순위</label>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px" id="tm-priority-grid">
+          <div class="dose-opt" data-pri="high" onclick="selectTaskPriority(this)" style="color:var(--danger)">높음</div>
+          <div class="dose-opt" data-pri="mid"  onclick="selectTaskPriority(this)" style="color:#b45309">중간</div>
+          <div class="dose-opt" data-pri="low"  onclick="selectTaskPriority(this)" style="color:var(--success)">낮음</div>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="createTask()">팀에 배분하기</button>
     </div>
   </div>
 
@@ -2357,6 +2553,7 @@ function renderAll() {
   renderTimeline();
   renderWeeklyExerciseGoal();
   renderDietAnalysis();
+  renderTeam();
 }
 
 function fmt(dateStr) {
@@ -2685,6 +2882,134 @@ function testNotification() {
   }
   sendNotification('🔔 알림 테스트', '마운자로 트래커 알림이 정상 작동합니다!', 'mj-test');
   showToast('테스트 알림을 전송했습니다');
+}
+
+// ─── Team Management ──────────────────────────────────
+const TEAMS = [
+  { id: 'dev',    name: '개발팀',    icon: '💻', color: '#4f46e5', bg: '#e0e7ff',  duty: '구현 및 개발' },
+  { id: 'design', name: '디자인팀',  icon: '🎨', color: '#7c3aed', bg: '#ede9fe',  duty: 'UI/UX 설계' },
+  { id: 'qa',     name: 'QA팀',      icon: '🔍', color: '#0369a1', bg: '#e0f2fe',  duty: '테스트 및 검증' },
+  { id: 'data',   name: '데이터팀',  icon: '📊', color: '#059669', bg: '#d1fae5',  duty: '분석 및 모니터링' },
+];
+
+let teamTasks = DB.get('mj_team_tasks', []);
+let selectedTaskPri = null;
+
+function openTaskModal() {
+  selectedTaskPri = null;
+  document.getElementById('tm-title').value = '';
+  document.getElementById('tm-desc').value = '';
+  document.querySelectorAll('#tm-priority-grid .dose-opt').forEach(el => el.classList.remove('selected'));
+  document.getElementById('task-modal-overlay').classList.add('open');
+}
+
+function closeTaskModal() {
+  document.getElementById('task-modal-overlay').classList.remove('open');
+}
+
+function handleTaskModalClick(e) {
+  if (e.target === document.getElementById('task-modal-overlay')) closeTaskModal();
+}
+
+function selectTaskPriority(el) {
+  document.querySelectorAll('#tm-priority-grid .dose-opt').forEach(x => x.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedTaskPri = el.dataset.pri;
+}
+
+function createTask() {
+  const title = document.getElementById('tm-title').value.trim();
+  if (!title) { showToast('태스크 제목을 입력해주세요'); return; }
+  if (!selectedTaskPri) { showToast('우선순위를 선택해주세요'); return; }
+  const desc = document.getElementById('tm-desc').value.trim();
+  const taskId = Date.now();
+  const dateStr = todayStr();
+
+  const subtasks = TEAMS.map(t => ({
+    teamId: t.id,
+    title: `[${title}] ${t.duty}`,
+    status: 'todo',
+  }));
+
+  const task = { id: taskId, title, desc, priority: selectedTaskPri, date: dateStr, subtasks };
+  teamTasks.push(task);
+  DB.set('mj_team_tasks', teamTasks);
+  closeTaskModal();
+  renderTeam();
+  showToast(`"${title}" 태스크가 4개 팀에 배분되었습니다`);
+}
+
+function cycleSubtaskStatus(taskId, teamId) {
+  const task = teamTasks.find(t => t.id === taskId);
+  if (!task) return;
+  const sub = task.subtasks.find(s => s.teamId === teamId);
+  if (!sub) return;
+  const cycle = ['todo', 'doing', 'done'];
+  sub.status = cycle[(cycle.indexOf(sub.status) + 1) % cycle.length];
+  DB.set('mj_team_tasks', teamTasks);
+  renderTeam();
+}
+
+function deleteTask(taskId) {
+  if (!confirm('태스크를 삭제할까요?')) return;
+  teamTasks = teamTasks.filter(t => t.id !== taskId);
+  DB.set('mj_team_tasks', teamTasks);
+  renderTeam();
+}
+
+function renderTeam() {
+  const board = document.getElementById('team-board');
+  if (!board) return;
+
+  // Update stats
+  const allSubs = teamTasks.flatMap(t => t.subtasks);
+  document.getElementById('ts-total').textContent = teamTasks.length;
+  document.getElementById('ts-doing').textContent = allSubs.filter(s => s.status === 'doing').length;
+  document.getElementById('ts-done').textContent  = allSubs.filter(s => s.status === 'done').length;
+
+  if (teamTasks.length === 0) {
+    board.innerHTML = `<div class="empty-state" style="padding:28px">
+      <div class="empty-icon">📋</div>
+      <p>아직 태스크가 없습니다<br><span style="font-size:11px;color:var(--gray-400)">위 버튼으로 첫 태스크를 만들어보세요</span></p>
+    </div>`;
+    return;
+  }
+
+  const statusLabel = { todo: '대기', doing: '진행중', done: '완료' };
+  const priLabel    = { high: '높음', mid: '중간', low: '낮음' };
+
+  board.innerHTML = TEAMS.map(team => {
+    const subs = teamTasks.map(task => {
+      const sub = task.subtasks.find(s => s.teamId === team.id);
+      if (!sub) return '';
+      return `<div class="task-card priority-${task.priority}">
+        <div class="task-top">
+          <div class="task-title">${sub.title}</div>
+        </div>
+        <div class="task-bottom">
+          <button class="status-badge ${sub.status}" onclick="cycleSubtaskStatus(${task.id},'${team.id}')">${
+            sub.status === 'todo' ? '⏸ ' : sub.status === 'doing' ? '▶ ' : '✓ '
+          }${statusLabel[sub.status]}</button>
+          <span class="priority-badge ${task.priority}">${priLabel[task.priority]}</span>
+          <span class="task-date">${task.date}</span>
+          <button onclick="deleteTask(${task.id})" style="margin-left:auto;background:none;border:none;color:var(--gray-400);cursor:pointer;font-size:13px;padding:0 2px" title="삭제">✕</button>
+        </div>
+      </div>`;
+    }).join('');
+
+    const teamSubCount = teamTasks.filter(t => t.subtasks.some(s => s.teamId === team.id && s.status !== 'done')).length;
+
+    return `<div class="team-section">
+      <div class="card" style="padding:12px">
+        <div class="team-header">
+          <div class="team-icon" style="background:${team.bg};color:${team.color}">${team.icon}</div>
+          <div class="team-name" style="color:${team.color}">${team.name}</div>
+          ${teamSubCount > 0 ? `<div class="team-count">${teamSubCount}개 진행</div>` : ''}
+        </div>
+        ${subs || `<div style="font-size:12px;color:var(--gray-400);padding:4px 0">배정된 태스크 없음</div>`}
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // ─── Generate app icon via Canvas ─────────────────────
