@@ -1140,6 +1140,25 @@
       <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:4px" onclick="testNotification()">알림 테스트</button>
     </div>
 
+    <!-- 잠금 설정 -->
+    <div class="card">
+      <div class="card-title">🔒 잠금 설정</div>
+      <p style="font-size:13px;color:var(--gray-500);margin-bottom:14px">비밀번호를 설정하면 앱을 열 때 인증이 필요합니다.</p>
+      <div id="pwd-status" style="font-size:13px;margin-bottom:12px"></div>
+      <div class="form-group" style="margin-bottom:8px">
+        <label>새 비밀번호</label>
+        <input type="password" id="pwd-new" placeholder="4자 이상" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:14px">
+      </div>
+      <div class="form-group">
+        <label>비밀번호 확인</label>
+        <input type="password" id="pwd-confirm" placeholder="다시 입력" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:14px">
+      </div>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="setPassword()">비밀번호 설정</button>
+        <button class="btn" id="pwd-remove-btn" style="flex-shrink:0;background:var(--danger-light);color:var(--danger);display:none" onclick="removePassword()">제거</button>
+      </div>
+    </div>
+
     <!-- 데이터 관리 -->
     <div class="card" style="border:1px solid var(--danger-light)">
       <div class="card-title" style="color:var(--danger)">데이터 관리</div>
@@ -1292,6 +1311,21 @@
 
 </div><!-- /app-shell -->
 
+<!-- 잠금 화면 -->
+<div id="lock-screen" style="display:none;position:fixed;inset:0;z-index:9999;background:var(--bg);flex-direction:column;align-items:center;justify-content:center;padding:32px">
+  <div style="width:100%;max-width:320px;text-align:center">
+    <div style="font-size:40px;margin-bottom:12px">🔒</div>
+    <div style="font-size:20px;font-weight:700;color:#111827;margin-bottom:4px">Mounjaro Tracker</div>
+    <div style="font-size:13px;color:var(--gray-500);margin-bottom:32px">Tirzepatide 복약 관리</div>
+    <input type="password" id="lock-input" placeholder="비밀번호 입력"
+      style="width:100%;box-sizing:border-box;padding:14px 16px;border:1.5px solid var(--gray-200);border-radius:12px;font-size:16px;outline:none;margin-bottom:10px;text-align:center;letter-spacing:4px"
+      onkeydown="if(event.key==='Enter')tryUnlock()">
+    <div id="lock-error" style="display:none;font-size:13px;color:var(--danger);margin-bottom:10px">비밀번호가 틀렸습니다</div>
+    <button onclick="tryUnlock()"
+      style="width:100%;padding:14px;background:var(--primary);color:white;border:none;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer">잠금 해제</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <!-- 투여 최적화 지표 안내 시트 -->
@@ -1347,7 +1381,7 @@ function showTab(name) {
   const tab = document.getElementById('tab-' + name);
   if (tab) tab.classList.add('active');
   renderAll();
-  if (name === 'profile') setTimeout(initProfileForm, 0);
+  if (name === 'profile') { setTimeout(initProfileForm, 0); updatePwdStatus(); }
 }
 
 function showRecordSub(name) {
@@ -3553,7 +3587,75 @@ function showToast(msg) {
   t._tid = setTimeout(() => t.classList.remove('show'), 2500);
 }
 
+// ─── Lock Screen ──────────────────────────────────────
+async function _sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function checkAuth() {
+  const storedHash = localStorage.getItem('mj_pwd_hash');
+  const lockEl = document.getElementById('lock-screen');
+  if (!storedHash) return; // 비밀번호 미설정 → 자유 접근
+  if (sessionStorage.getItem('mj_authed') === '1') return; // 이미 인증됨
+  lockEl.style.display = 'flex';
+  setTimeout(() => document.getElementById('lock-input')?.focus(), 100);
+}
+
+async function tryUnlock() {
+  const pw = document.getElementById('lock-input').value;
+  if (!pw) return;
+  const hash = await _sha256(pw);
+  const stored = localStorage.getItem('mj_pwd_hash');
+  if (hash === stored) {
+    sessionStorage.setItem('mj_authed', '1');
+    document.getElementById('lock-screen').style.display = 'none';
+    document.getElementById('lock-input').value = '';
+    document.getElementById('lock-error').style.display = 'none';
+  } else {
+    document.getElementById('lock-error').style.display = 'block';
+    document.getElementById('lock-input').value = '';
+    document.getElementById('lock-input').focus();
+  }
+}
+
+async function setPassword() {
+  const newPw  = document.getElementById('pwd-new').value;
+  const confPw = document.getElementById('pwd-confirm').value;
+  if (!newPw) { showToast('비밀번호를 입력해주세요'); return; }
+  if (newPw.length < 4) { showToast('비밀번호는 4자 이상이어야 합니다'); return; }
+  if (newPw !== confPw) { showToast('비밀번호가 일치하지 않습니다'); return; }
+  const hash = await _sha256(newPw);
+  localStorage.setItem('mj_pwd_hash', hash);
+  sessionStorage.setItem('mj_authed', '1');
+  document.getElementById('pwd-new').value = '';
+  document.getElementById('pwd-confirm').value = '';
+  updatePwdStatus();
+  showToast('비밀번호가 설정되었습니다 🔒');
+}
+
+function removePassword() {
+  if (!confirm('비밀번호를 제거하면 누구나 앱에 접근할 수 있습니다. 계속할까요?')) return;
+  localStorage.removeItem('mj_pwd_hash');
+  sessionStorage.removeItem('mj_authed');
+  updatePwdStatus();
+  showToast('비밀번호가 제거되었습니다');
+}
+
+function updatePwdStatus() {
+  const statusEl = document.getElementById('pwd-status');
+  const removeBtn = document.getElementById('pwd-remove-btn');
+  if (!statusEl) return;
+  const isSet = !!localStorage.getItem('mj_pwd_hash');
+  statusEl.innerHTML = isSet
+    ? `<span style="color:var(--success);font-weight:600">✅ 잠금 설정됨</span> — 현재 비밀번호가 적용되어 있습니다`
+    : `<span style="color:var(--gray-400)">🔓 잠금 해제됨</span> — 비밀번호가 설정되어 있지 않습니다`;
+  if (removeBtn) removeBtn.style.display = isSet ? '' : 'none';
+}
+
 // ─── Init ─────────────────────────────────────────────
+checkAuth();
+updatePwdStatus();
 initDates();
 initProfileForm();
 renderAll();
