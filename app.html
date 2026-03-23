@@ -9,6 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Mounjaro">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='38' fill='%236366f1'/%3E%3Cg transform='translate(18%2C18) scale(6)' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14.5 7.5a2 2 0 0 0-2.83 0L3 16.17a2 2 0 0 0 0 2.83l2.83 2.83a2 2 0 0 0 2.83 0L17.5 13a2 2 0 0 0 0-2.83L14.5 7.5z'/%3E%3Cline x1='10' y1='11' x2='13' y2='14'/%3E%3Cline x1='12' y1='9' x2='15' y2='12'/%3E%3Cline x1='3' y1='21' x2='6' y2='18'/%3E%3Cline x1='18' y1='3' x2='21' y2='6'/%3E%3Cline x1='17' y1='4' x2='20' y2='7'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="manifest" href="data:application/json,%7B%22name%22%3A%22Mounjaro+Tracker%22%2C%22short_name%22%3A%22Mounjaro%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f3f4f6%22%2C%22theme_color%22%3A%22%236366f1%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%2520xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%2520viewBox%3D'0%25200%2520180%2520180'%253E%253Crect%2520width%3D'180'%2520height%3D'180'%2520rx%3D'38'%2520fill%3D'%25236366f1'%2F%253E%253C%2Fsvg%253E%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
+<script>(function(){var t=localStorage.getItem('mj_theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.dataset.theme=t})();</script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -838,51 +839,118 @@
   .ach-streak { font-size:11px; font-weight:700; color:var(--primary); margin-top:4px; }
 
   /* ─── Dark Mode ───────────────────────────────── */
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --gray-50:  #111113;
-      --gray-100: #1c1c1e;
-      --gray-200: #2c2c2e;
-      --gray-300: #3a3a3c;
-      --gray-500: #8e8e93;
-      --gray-700: #c7c7cc;
-      --gray-900: #f2f2f7;
-    }
-    body { background: #111113; }
-    .app-shell, .main-content { background: #111113; }
-    .header, .bottom-nav { background: #1c1c1e; }
-    .card { background: #1c1c1e; }
-    .sheet-overlay .bottom-sheet,
-    .task-modal-overlay .task-modal,
-    .ex-sheet, .ach-sheet, .nutrient-sheet { background: #1c1c1e; }
-    .nutrient-hist-btn { background: #1c1c1e; }
-    .nitem-edit-btn, .nitem-del-btn { background: #1c1c1e; }
-    .routine-label-main { color: #f2f2f7; }
-    .routine-row.tappable:active { background: #2c2c2e; }
-    input, select, textarea {
-      background: #2c2c2e !important; color: var(--gray-900) !important;
-      border-color: var(--gray-300) !important;
-    }
-    .site-opt, .dose-opt, .se-chip, .sev-opt,
-    .subtab-btn, .ex-type-opt, .ex-dur-opt {
-      background: #2c2c2e; color: var(--gray-700); border-color: var(--gray-300);
-    }
-    .subtab-btn.active {
-      background: #3a3a3c; color: var(--primary);
-    }
-    .timeline-item, .log-item {
-      background: #2c2c2e; border-color: var(--gray-300);
-    }
-    .team-stat-card { background: #2c2c2e; }
-    .chart-period-btn { background: #2c2c2e; color: var(--gray-500); border-color: var(--gray-300); }
-    .chart-period-btn.active { background: #3730a3; color: white; border-color: var(--primary); }
-    .owner-banner { background: #1c1c1e; }
-    .goal-progress-wrap { background: rgba(255,255,255,0.1); }
-    .ex-sheet-overlay { background: rgba(0,0,0,0.6); }
-    .rotation-hint { background: #1e1b4b; }
-    .se-pattern-track { background: #2c2c2e; }
-    .protein-progress-fill, .water-progress-fill { background: #2c2c2e; }
+  html[data-theme="dark"] {
+    --gray-50:  #111113;
+    --gray-100: #1c1c1e;
+    --gray-200: #2c2c2e;
+    --gray-300: #3a3a3c;
+    --gray-500: #8e8e93;
+    --gray-700: #c7c7cc;
+    --gray-900: #f2f2f7;
   }
+  html[data-theme="dark"] body { background: #111113; }
+  html[data-theme="dark"] .app-shell,
+  html[data-theme="dark"] .main-content { background: #111113; }
+  html[data-theme="dark"] .header,
+  html[data-theme="dark"] .bottom-nav { background: #1c1c1e; }
+  html[data-theme="dark"] .card { background: #1c1c1e; }
+  html[data-theme="dark"] .sheet-overlay .bottom-sheet,
+  html[data-theme="dark"] .task-modal-overlay .task-modal,
+  html[data-theme="dark"] .ex-sheet,
+  html[data-theme="dark"] .ach-sheet,
+  html[data-theme="dark"] .nutrient-sheet { background: #1c1c1e; }
+  html[data-theme="dark"] .nutrient-hist-btn { background: #1c1c1e; }
+  html[data-theme="dark"] .nitem-edit-btn,
+  html[data-theme="dark"] .nitem-del-btn { background: #1c1c1e; }
+  html[data-theme="dark"] .header-btn { background: #2c2c2e; border-color: #3a3a3c; }
+  html[data-theme="dark"] .zoom-btn { background: #2c2c2e; border-color: #3a3a3c; color: #c7c7cc; }
+  html[data-theme="dark"] .routine-label-main { color: #f2f2f7; }
+  html[data-theme="dark"] .routine-row.tappable:active { background: #2c2c2e; }
+  html[data-theme="dark"] input,
+  html[data-theme="dark"] select,
+  html[data-theme="dark"] textarea {
+    background: #2c2c2e !important; color: var(--gray-900) !important;
+    border-color: var(--gray-300) !important;
+  }
+  html[data-theme="dark"] .site-opt,
+  html[data-theme="dark"] .dose-opt,
+  html[data-theme="dark"] .se-chip,
+  html[data-theme="dark"] .sev-opt,
+  html[data-theme="dark"] .subtab-btn,
+  html[data-theme="dark"] .ex-type-opt,
+  html[data-theme="dark"] .ex-dur-opt { background: #2c2c2e; color: var(--gray-700); border-color: var(--gray-300); }
+  html[data-theme="dark"] .subtab-btn.active { background: #3a3a3c; color: var(--primary); }
+  html[data-theme="dark"] .timeline-item,
+  html[data-theme="dark"] .log-item { background: #2c2c2e; border-color: var(--gray-300); }
+  html[data-theme="dark"] .team-stat-card { background: #2c2c2e; }
+  html[data-theme="dark"] .chart-period-btn { background: #2c2c2e; color: var(--gray-500); border-color: var(--gray-300); }
+  html[data-theme="dark"] .chart-period-btn.active { background: #3730a3; color: white; border-color: var(--primary); }
+  html[data-theme="dark"] .owner-banner { background: #1c1c1e; }
+  html[data-theme="dark"] .goal-progress-wrap { background: rgba(255,255,255,0.1); }
+  html[data-theme="dark"] .ex-sheet-overlay,
+  html[data-theme="dark"] .sleep-sheet-overlay,
+  html[data-theme="dark"] .meal-sheet-overlay,
+  html[data-theme="dark"] .ach-sheet-overlay,
+  html[data-theme="dark"] .ex-sheet-overlay,
+  html[data-theme="dark"] .nutrient-sheet-overlay { background: rgba(0,0,0,0.6); }
+  html[data-theme="dark"] .rotation-hint { background: #1e1b4b; }
+  html[data-theme="dark"] .se-pattern-track { background: #2c2c2e; }
+  html[data-theme="dark"] .protein-progress-fill,
+  html[data-theme="dark"] .water-progress-fill { background: #2c2c2e; }
+  html[data-theme="dark"] .onboarding-sheet { background: #1c1c1e; }
+  html[data-theme="dark"] .onboarding-title { color: #f2f2f7; }
+  html[data-theme="dark"] .onboarding-desc { color: #8e8e93; }
+  html[data-theme="dark"] .onboarding-dot { background: #3a3a3c; }
+  html[data-theme="dark"] .task-card { background: #2c2c2e; }
+  html[data-theme="dark"] .chart-canvas { background: #1c1c1e; }
+
+  /* ─── FAB (Floating Action Button) ─────────────── */
+  #fab-wrap {
+    position: fixed;
+    bottom: calc(env(safe-area-inset-bottom) + 72px);
+    right: 18px;
+    z-index: 150;
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: flex-end;
+    gap: 10px;
+  }
+  #fab-main-btn {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: white;
+    border: none;
+    font-size: 26px;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(79,70,229,0.4);
+    transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1), background 0.15s;
+    display: flex; align-items: center; justify-content: center;
+    line-height: 1;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #fab-main-btn.open { transform: rotate(45deg); background: #4338ca; }
+  #fab-menu {
+    display: flex; flex-direction: column; gap: 8px; align-items: flex-end;
+    opacity: 0; pointer-events: none;
+    transform: translateY(8px) scale(0.95);
+    transition: opacity 0.18s, transform 0.18s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  #fab-menu.open { opacity: 1; pointer-events: auto; transform: translateY(0) scale(1); }
+  .fab-sub-btn {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 16px;
+    background: white;
+    border-radius: 24px; border: none;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.13);
+    font-size: 14px; font-weight: 600;
+    color: var(--gray-900);
+    cursor: pointer; white-space: nowrap;
+    font-family: inherit;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .fab-sub-btn:active { transform: scale(0.97); }
+  html[data-theme="dark"] .fab-sub-btn { background: #2c2c2e; }
 
   /* ─── Team Tab ─────────────────────────────────── */
   .owner-banner {
@@ -1133,6 +1201,10 @@
     <p>Tirzepatide 복약 관리</p>
   </div>
   <div style="margin-left:auto;display:flex;gap:8px;flex-shrink:0">
+    <button class="header-btn" id="theme-btn" onclick="toggleTheme()" title="테마 전환">
+      <svg id="theme-icon-moon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg id="theme-icon-sun" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
     <button class="header-btn" id="trophy-btn" onclick="openAchSheet()" title="나의 업적">
       <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
@@ -1657,6 +1729,75 @@
 </div><!-- /app-shell -->
 
 <div class="toast" id="toast"></div>
+
+<!-- ─── FAB ──────────────────────────────────────── -->
+<div id="fab-wrap">
+  <div id="fab-menu">
+    <button class="fab-sub-btn" onclick="openQuickInj()">💉 주사 기록</button>
+    <button class="fab-sub-btn" onclick="openQuickWt()">⚖️ 체중 기록</button>
+  </div>
+  <button id="fab-main-btn" onclick="toggleFab()" aria-label="빠른 입력">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+  </button>
+</div>
+
+<!-- ─── Quick Log Sheet ────────────────────────── -->
+<div class="sheet-overlay" id="quick-sheet-overlay" onclick="handleQuickSheetClick(event)">
+  <div class="bottom-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="quick-sheet-title"></div>
+
+    <!-- 빠른 주사 입력 -->
+    <div id="quick-inj-form" style="display:none">
+      <div class="form-group">
+        <label>날짜 · 시간</label>
+        <div style="display:flex;gap:8px">
+          <input type="date" id="qinj-date" style="flex:1;min-width:0">
+          <input type="time" id="qinj-time" style="width:112px">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>용량</label>
+        <div class="dose-grid">
+          <div class="dose-opt q-dose-opt" data-dose="2.5" onclick="qSelectDose(this)">2.5mg<br><span class="dose-sub">1단계</span></div>
+          <div class="dose-opt q-dose-opt" data-dose="5"   onclick="qSelectDose(this)">5mg<br><span class="dose-sub">2단계</span></div>
+          <div class="dose-opt q-dose-opt" data-dose="7.5" onclick="qSelectDose(this)">7.5mg<br><span class="dose-sub">3단계</span></div>
+          <div class="dose-opt q-dose-opt" data-dose="10"  onclick="qSelectDose(this)">10mg<br><span class="dose-sub">4단계</span></div>
+          <div class="dose-opt q-dose-opt" data-dose="12.5" onclick="qSelectDose(this)">12.5mg<br><span class="dose-sub">5단계</span></div>
+          <div class="dose-opt q-dose-opt" data-dose="15"  onclick="qSelectDose(this)">15mg<br><span class="dose-sub">최대</span></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>부위</label>
+        <div class="site-grid">
+          <div class="site-opt q-site-opt" data-site="복부 좌"   onclick="qSelectSite(this)">복부 좌</div>
+          <div class="site-opt q-site-opt" data-site="복부 우"   onclick="qSelectSite(this)">복부 우</div>
+          <div class="site-opt q-site-opt" data-site="허벅지 좌" onclick="qSelectSite(this)">허벅지 좌</div>
+          <div class="site-opt q-site-opt" data-site="허벅지 우" onclick="qSelectSite(this)">허벅지 우</div>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="saveQuickInj()">💉 저장</button>
+    </div>
+
+    <!-- 빠른 체중 입력 -->
+    <div id="quick-wt-form" style="display:none">
+      <div class="form-group">
+        <label>날짜 · 시간</label>
+        <div style="display:flex;gap:8px">
+          <input type="date" id="qwt-date" style="flex:1;min-width:0">
+          <input type="time" id="qwt-time" style="width:110px;flex-shrink:0">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>체중 (kg)</label>
+        <input type="number" id="qwt-value" placeholder="예: 75.5" step="0.1" min="30" max="300">
+      </div>
+      <button class="btn btn-primary" onclick="saveQuickWt()">⚖️ 저장</button>
+    </div>
+  </div>
+</div>
 
 <!-- 투여 최적화 지표 안내 시트 -->
 <div class="sheet-overlay" id="info-sheet-overlay" onclick="closeInfoSheet(event)">
@@ -4691,6 +4832,113 @@ function resetData() {
   renderAll();
 }
 
+// ─── Theme ────────────────────────────────────────────
+function toggleTheme() {
+  const html = document.documentElement;
+  const next = html.dataset.theme === 'dark' ? 'light' : 'dark';
+  html.dataset.theme = next;
+  localStorage.setItem('mj_theme', next);
+  _updateThemeBtn();
+}
+function _updateThemeBtn() {
+  const isDark = document.documentElement.dataset.theme === 'dark';
+  const moon = document.getElementById('theme-icon-moon');
+  const sun  = document.getElementById('theme-icon-sun');
+  if (!moon || !sun) return;
+  moon.style.display = isDark ? 'none' : '';
+  sun.style.display  = isDark ? '' : 'none';
+}
+
+// ─── FAB ──────────────────────────────────────────────
+let _fabOpen = false;
+let _qDose = null, _qSite = null;
+function toggleFab() {
+  _fabOpen = !_fabOpen;
+  document.getElementById('fab-main-btn').classList.toggle('open', _fabOpen);
+  document.getElementById('fab-menu').classList.toggle('open', _fabOpen);
+}
+function closeFab() {
+  _fabOpen = false;
+  document.getElementById('fab-main-btn').classList.remove('open');
+  document.getElementById('fab-menu').classList.remove('open');
+}
+function openQuickInj() {
+  closeFab();
+  _qDose = null; _qSite = null;
+  document.querySelectorAll('.q-dose-opt').forEach(e => e.classList.remove('selected'));
+  document.querySelectorAll('.q-site-opt').forEach(e => e.classList.remove('selected'));
+  const now = new Date();
+  document.getElementById('qinj-date').value = todayStr();
+  document.getElementById('qinj-time').value =
+    now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+  // Pre-select last dose if available
+  if (injections.length > 0) {
+    const lastDose = injections[injections.length - 1].dose;
+    const el = document.querySelector(`.q-dose-opt[data-dose="${lastDose}"]`);
+    if (el) { el.classList.add('selected'); _qDose = lastDose; }
+  }
+  document.getElementById('quick-inj-form').style.display = 'block';
+  document.getElementById('quick-wt-form').style.display  = 'none';
+  document.getElementById('quick-sheet-title').textContent = '💉 주사 기록';
+  document.getElementById('quick-sheet-overlay').classList.add('open');
+}
+function openQuickWt() {
+  closeFab();
+  const now = new Date();
+  document.getElementById('qwt-date').value = todayStr();
+  document.getElementById('qwt-time').value =
+    now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+  document.getElementById('qwt-value').value = '';
+  document.getElementById('quick-inj-form').style.display = 'none';
+  document.getElementById('quick-wt-form').style.display  = 'block';
+  document.getElementById('quick-sheet-title').textContent = '⚖️ 체중 기록';
+  document.getElementById('quick-sheet-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('qwt-value').focus(), 350);
+}
+function closeQuickSheet() {
+  document.getElementById('quick-sheet-overlay').classList.remove('open');
+}
+function handleQuickSheetClick(e) {
+  if (e.target === document.getElementById('quick-sheet-overlay')) closeQuickSheet();
+}
+function qSelectDose(el) {
+  document.querySelectorAll('.q-dose-opt').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+  _qDose = el.dataset.dose;
+}
+function qSelectSite(el) {
+  document.querySelectorAll('.q-site-opt').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+  _qSite = el.dataset.site;
+}
+function saveQuickInj() {
+  if (!_qDose) { showToast('용량을 선택하세요'); return; }
+  if (!_qSite) { showToast('주사 부위를 선택하세요'); return; }
+  const date = document.getElementById('qinj-date').value;
+  const time = document.getElementById('qinj-time').value;
+  if (!date) { showToast('날짜를 입력하세요'); return; }
+  const inj = { id: Date.now(), date, time: time || '12:00', dose: _qDose, site: _qSite, memo: '' };
+  injections.push(inj);
+  injections.sort((a, b) => injDateMs(a) - injDateMs(b));
+  DB.set('mj_injections', injections);
+  closeQuickSheet();
+  renderAll();
+  showToast('주사 기록이 저장되었습니다');
+}
+function saveQuickWt() {
+  const val = parseFloat(document.getElementById('qwt-value').value);
+  const date = document.getElementById('qwt-date').value;
+  const time = document.getElementById('qwt-time').value;
+  if (!date || isNaN(val) || val < 20 || val > 400) { showToast('체중을 올바르게 입력하세요'); return; }
+  const wt = { id: Date.now(), date, time: time || '08:00', value: val, memo: '' };
+  weights.push(wt);
+  weights.sort((a, b) => new Date(a.date + 'T' + (a.time||'12:00')) - new Date(b.date + 'T' + (b.time||'12:00')));
+  DB.set('mj_weights', weights);
+  closeQuickSheet();
+  renderAll();
+  showToast('체중이 저장되었습니다');
+}
+
 // ─── Toast ────────────────────────────────────────────
 function showToast(msg) {
   const t = document.getElementById('toast');
@@ -4719,6 +4967,14 @@ renderAll();
 initNotifSettings();
 checkNotifications();
 scheduleMidnightRefresh();
+_updateThemeBtn();
+// Notification deeplink: ?tab=weight or ?tab=injection
+(function(){
+  const p = new URLSearchParams(location.search);
+  const tab = p.get('tab');
+  if (tab === 'weight') { showTab('record'); showRecordSub('wt'); setTimeout(() => document.getElementById('wt-value').focus(), 400); }
+  else if (tab === 'injection') { showTab('record'); showRecordSub('inj'); }
+})();
 // Onboarding: show on first launch
 setTimeout(showOnboardingIfNeeded, 400);
 
@@ -4771,10 +5027,10 @@ function requestNotifPermission() {
   });
 }
 
-function sendNotification(title, body, tag) {
+function sendNotification(title, body, tag, actions) {
   if (Notification.permission !== 'granted') return;
   if (navigator.serviceWorker.controller) {
-    navigator.serviceWorker.controller.postMessage({ type: 'SHOW_NOTIFICATION', title, body, tag });
+    navigator.serviceWorker.controller.postMessage({ type: 'SHOW_NOTIFICATION', title, body, tag, actions: actions || [] });
   } else {
     new Notification(title, { body, tag });
   }
@@ -4802,7 +5058,7 @@ function checkNotifications() {
       const msg = daysOverdue < 1
         ? '오늘이 주사 예정일입니다. 잊지 마세요!'
         : `주사 예정일이 ${Math.floor(daysOverdue + 1)}일 지났습니다. 확인해 주세요.`;
-      sendNotification('💉 마운자로 투약 알림', msg, 'mj-injection');
+      sendNotification('💉 마운자로 투약 알림', msg, 'mj-injection', [{ action: 'record-inj', title: '💉 주사 기록' }]);
       localStorage.setItem('mj_last_injection_notif', today);
     }
   }
@@ -4838,7 +5094,7 @@ function checkNotifications() {
     if (lastNotifDay !== today) {
       const todayWeight = weights.find(w => w.date === today);
       if (!todayWeight) {
-        sendNotification('⚖️ 체중 측정 알림', '오늘 아직 체중을 측정하지 않았습니다. 아침 식전 체중을 기록하세요!', 'mj-weight');
+        sendNotification('⚖️ 체중 측정 알림', '오늘 아직 체중을 측정하지 않았습니다. 아침 식전 체중을 기록하세요!', 'mj-weight', [{ action: 'record-weight', title: '⚖️ 지금 기록' }]);
         localStorage.setItem('mj_last_weight_notif', today);
       }
     }
