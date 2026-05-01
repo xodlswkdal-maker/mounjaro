@@ -727,6 +727,120 @@
   }
 
   /* ─── Routine Tab ───────────────────────────── */
+  /* ─── Body map (injection site visualization) ─── */
+  .bodymap-wrap {
+    display: flex;
+    justify-content: center;
+    padding: 8px 0;
+  }
+  .bodymap-svg {
+    width: 180px;
+    max-width: 100%;
+    height: auto;
+  }
+  .bm-body-fill   { fill: var(--gray-100); stroke: var(--gray-300); stroke-width: 1.2; }
+  .bm-region      { fill: var(--gray-200); stroke: var(--gray-400); stroke-width: 1; stroke-dasharray: 2 2; cursor: pointer; transition: fill 0.15s; }
+  .bm-region:hover{ fill: var(--primary-light); }
+  .bm-region.selected { fill: var(--primary); stroke: var(--primary); stroke-dasharray: none; }
+  .bm-region.readonly { cursor: default; pointer-events: none; }
+  .bm-region-label { font-size: 7px; fill: var(--gray-500); text-anchor: middle; pointer-events: none; user-select: none; }
+  .bm-injection-dot { stroke: white; stroke-width: 0.8; pointer-events: none; }
+  .bodymap-legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    font-size: 10px;
+    color: var(--gray-500);
+    margin-top: 4px;
+    margin-bottom: 6px;
+  }
+  .bodymap-legend span { display: inline-flex; align-items: center; gap: 4px; }
+  .bm-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+  .bm-dot-recent { background: #ef4444; }
+  .bm-dot-mid    { background: #f97316; }
+  .bm-dot-old    { background: #fbbf24; }
+  .bm-dot-older  { background: #d1d5db; }
+  html[data-theme="dark"] .bm-body-fill { fill: #2c2c2e; stroke: #48484a; }
+  html[data-theme="dark"] .bm-region    { fill: #3a3a3c; stroke: #636366; }
+  html[data-theme="dark"] .bm-region.selected { fill: var(--primary); }
+  html[data-theme="dark"] .bm-region-label { fill: #8e8e93; }
+
+  /* ─── Drug info accordion ─── */
+  .drug-info-section {
+    border: 1px solid var(--gray-200);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    overflow: hidden;
+    background: var(--gray-50, #f9fafb);
+  }
+  .drug-info-section summary {
+    padding: 12px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gray-900);
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .drug-info-section summary::-webkit-details-marker { display: none; }
+  .drug-info-section summary::after {
+    content: "▼";
+    font-size: 9px;
+    color: var(--gray-400);
+    transition: transform 0.2s;
+  }
+  .drug-info-section[open] summary::after { transform: rotate(180deg); }
+  .drug-info-section[open] summary { border-bottom: 1px solid var(--gray-200); }
+  .drug-info-body {
+    padding: 10px 14px 14px;
+    font-size: 12px;
+    color: var(--gray-700);
+    line-height: 1.6;
+    background: white;
+  }
+  .drug-info-body p { margin: 0 0 8px; }
+  .drug-info-body p:last-child { margin-bottom: 0; }
+  .drug-info-body ul,
+  .drug-info-body ol { margin: 0 0 8px; padding-left: 18px; }
+  .drug-info-body li { margin-bottom: 4px; }
+  .drug-info-body b { color: var(--gray-900); }
+  html[data-theme="dark"] .drug-info-section { background: #2c2c2e; border-color: #3a3a3c; }
+  html[data-theme="dark"] .drug-info-section summary { color: #f2f2f7; }
+  html[data-theme="dark"] .drug-info-section[open] summary { border-bottom-color: #3a3a3c; }
+  html[data-theme="dark"] .drug-info-body { background: #1c1c1e; color: #d1d1d6; }
+  html[data-theme="dark"] .drug-info-body b { color: #f2f2f7; }
+
+  /* ─── Wellness card sliders ─── */
+  .wellness-row { padding: 10px 0; border-bottom: 1px solid var(--gray-100); }
+  .wellness-row:last-of-type { border-bottom: none; padding-bottom: 6px; }
+  .wellness-label { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .wellness-emoji { font-size: 16px; }
+  .wellness-name  { font-size: 13px; font-weight: 600; color: var(--gray-900); flex: 1; }
+  .wellness-val   { font-size: 14px; font-weight: 700; color: var(--primary); min-width: 24px; text-align: right; }
+  .wellness-slider {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 6px; border-radius: 3px;
+    background: var(--gray-200); outline: none; cursor: pointer; margin: 4px 0 2px;
+  }
+  .wellness-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--primary); cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+  }
+  .wellness-slider::-moz-range-thumb {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--primary); cursor: pointer; border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+  }
+  .wellness-scale { display: flex; justify-content: space-between; font-size: 10px; color: var(--gray-400); margin-top: 2px; }
+  html[data-theme="dark"] .wellness-row { border-bottom-color: #2c2c2e; }
+  html[data-theme="dark"] .wellness-name { color: #f2f2f7; }
+  html[data-theme="dark"] .wellness-slider { background: #3a3a3c; }
+
   .routine-status-banner {
     border-radius: 12px; padding: 12px 14px; margin-bottom: 10px;
     display: flex; align-items: center; gap: 10px;
@@ -1250,6 +1364,17 @@
     <!-- ③ 투여 최적화 분석: 데이터 있을 때만 표시, 고정 높이 -->
     <div class="card" id="dose-opt-card" style="display:none;padding:10px 14px"></div>
 
+    <!-- ④ 주사 부위 히트맵: 데이터 있을 때만 -->
+    <div class="card" id="bodymap-home-card" style="display:none;padding:14px">
+      <div class="card-title" style="margin-bottom:8px">주사 부위 히트맵 (최근 6주)</div>
+      <div class="bodymap-wrap" id="bodymap-home-wrap"></div>
+      <div class="bodymap-legend">
+        <span><span class="bm-dot bm-dot-recent"></span>최근 7일</span>
+        <span><span class="bm-dot bm-dot-mid"></span>~3주</span>
+        <span><span class="bm-dot bm-dot-old"></span>~6주</span>
+      </div>
+    </div>
+
   </div>
 
   <!-- RECORD TAB (주사 + 체중 + 부작용 통합) -->
@@ -1335,6 +1460,13 @@
         </div>
         <div class="form-group">
           <label>주사 부위</label>
+          <div class="bodymap-wrap" id="bodymap-input-wrap"></div>
+          <div class="bodymap-legend">
+            <span><span class="bm-dot bm-dot-recent"></span>최근 7일</span>
+            <span><span class="bm-dot bm-dot-mid"></span>~3주</span>
+            <span><span class="bm-dot bm-dot-old"></span>~6주</span>
+            <span><span class="bm-dot bm-dot-older"></span>그 이전</span>
+          </div>
           <div class="site-grid" id="site-grid">
             <div class="site-opt" data-site="복부 좌"  onclick="selectSite(this)">복부 좌</div>
             <div class="site-opt" data-site="복부 우"  onclick="selectSite(this)">복부 우</div>
@@ -1557,6 +1689,113 @@
         <button class="btn" style="flex:1;background:var(--danger-light);color:var(--danger);justify-content:center" onclick="resetData()">전체 초기화</button>
       </div>
     </div>
+
+    <!-- 약물 / 안전 정보 -->
+    <div class="card" id="drug-info-card">
+      <div class="card-title">💊 마운자로 안전 정보</div>
+      <p style="font-size:12px;color:var(--gray-500);margin-bottom:12px;line-height:1.5">
+        처음 사용하시는 분이라면 꼭 한 번 읽어보세요. 출처: FDA 처방정보(NDA 215866), 식품의약품안전처
+      </p>
+
+      <details class="drug-info-section">
+        <summary>🔍 마운자로(티르제파타이드)란?</summary>
+        <div class="drug-info-body">
+          <p>마운자로는 <b>티르제파타이드(tirzepatide)</b>를 주성분으로 하는 GLP-1 / GIP 이중 작용제 주사제입니다. 일주일에 한 번, 피하주사로 투여합니다.</p>
+          <p>식욕을 억제하고 포만감을 증가시켜 체중 감소와 혈당 조절을 돕습니다.</p>
+        </div>
+      </details>
+
+      <details class="drug-info-section">
+        <summary>📦 보관법</summary>
+        <div class="drug-info-body">
+          <ul>
+            <li><b>냉장 보관 (2~8℃)</b> — 평소에는 반드시 냉장</li>
+            <li><b>실온 보관 (30℃ 이하)</b> — 최대 21일까지 가능 (이후 폐기)</li>
+            <li><b>얼리지 마세요</b> — 얼었던 펜은 사용 금지</li>
+            <li>직사광선 피하기, 어린이 손 닿지 않는 곳에 보관</li>
+          </ul>
+        </div>
+      </details>
+
+      <details class="drug-info-section" open>
+        <summary>⏰ 용량을 놓쳤을 때 (Missed Dose)</summary>
+        <div class="drug-info-body">
+          <p><b>FDA/식약처 공식 가이드:</b></p>
+          <ul>
+            <li><b>4일(96시간) 이내</b>에 알았다면 → <b>가능한 빨리</b> 맞고, 다음 정기 투여일은 그대로 유지</li>
+            <li><b>4일이 지났다면</b> → <b>건너뛰고</b> 다음 정기 투여일에 맞기. 절대 두 번 분량을 한 번에 맞지 마세요</li>
+            <li>필요시 <b>요일 변경 가능</b> — 단, 마지막 투여 후 <b>최소 3일(72시간)</b> 이상 간격을 두고 새 요일로 옮기세요</li>
+          </ul>
+          <p style="margin-top:8px;color:var(--danger);font-weight:600">⚠️ 절대 한 번에 두 회분을 맞지 마세요. 심각한 부작용 위험.</p>
+        </div>
+      </details>
+
+      <details class="drug-info-section">
+        <summary>🚫 금기 / 사용 주의</summary>
+        <div class="drug-info-body">
+          <p><b>다음에 해당하면 사용 전 반드시 의사와 상의:</b></p>
+          <ul>
+            <li><b>갑상선 수질암(MTC) 본인 또는 가족력</b></li>
+            <li><b>다발성 내분비선 종양 2형(MEN 2)</b></li>
+            <li><b>췌장염 병력</b></li>
+            <li><b>심한 위장관 질환</b> (위마비 등)</li>
+            <li><b>중증 신장·간 질환</b></li>
+            <li><b>임신·수유 중</b> 또는 임신 계획 중</li>
+            <li><b>티르제파타이드 알레르기 병력</b></li>
+          </ul>
+        </div>
+      </details>
+
+      <details class="drug-info-section">
+        <summary>🆘 저혈당 응급 대처</summary>
+        <div class="drug-info-body">
+          <p>인슐린·설포닐우레아(SU)계 당뇨약과 함께 쓰면 <b>저혈당 위험</b>이 높아집니다.</p>
+          <p><b>저혈당 증상:</b> 식은땀, 손떨림, 어지러움, 두근거림, 흐릿한 시야, 갑작스러운 허기</p>
+          <p><b>15-15 규칙:</b></p>
+          <ol>
+            <li>당분 15g 즉시 섭취 (주스 ½컵, 사탕 3~4개, 포도당정 3정)</li>
+            <li>15분 대기 후 혈당 재측정</li>
+            <li>여전히 70mg/dL 미만이면 다시 15g 섭취</li>
+            <li>회복되면 단백질·복합탄수 식사</li>
+          </ol>
+          <p style="margin-top:8px;color:var(--danger);font-weight:600">의식이 흐려지면 119 즉시 호출.</p>
+        </div>
+      </details>
+
+      <details class="drug-info-section">
+        <summary>🏥 즉시 병원에 가야 하는 증상</summary>
+        <div class="drug-info-body">
+          <ul>
+            <li><b>심한 복통</b> (등으로 퍼지는 통증) — 췌장염 의심</li>
+            <li><b>지속적인 구토</b>로 수분 섭취 불가</li>
+            <li><b>목 부위 혹/덩어리</b>, 쉰 목소리, 삼킴 곤란</li>
+            <li><b>호흡곤란, 얼굴/입술/혀 부종</b> — 알레르기 반응</li>
+            <li><b>심한 어지러움, 실신</b></li>
+            <li><b>소변량 급격한 감소</b> — 탈수/신장 손상</li>
+            <li><b>황달</b>, 우상복부 통증 — 담낭 문제</li>
+          </ul>
+        </div>
+      </details>
+
+      <details class="drug-info-section">
+        <summary>💉 주사 방법 기본</summary>
+        <div class="drug-info-body">
+          <ul>
+            <li>주 1회, 같은 요일에 (시간은 자유)</li>
+            <li>부위: <b>복부 / 허벅지 / 위팔</b> — 매번 위치 바꾸기 (rotation)</li>
+            <li>식사와 무관하게 투여 가능</li>
+            <li>펜은 흔들지 말 것</li>
+            <li>주사 후 펜은 안전 폐기 (sharps container)</li>
+          </ul>
+          <p style="font-size:11px;color:var(--gray-400);margin-top:6px">상세 사용법은 펜 동봉 설명서와 의료진 지도를 따르세요.</p>
+        </div>
+      </details>
+
+      <p style="font-size:10px;color:var(--gray-400);margin-top:14px;line-height:1.5;text-align:center">
+        ⚠️ 본 정보는 일반 참고용이며 의학적 조언을 대체하지 않습니다.<br>
+        구체적인 처방·용량 조절은 반드시 담당 의사와 상의하세요.
+      </p>
+    </div>
   </div>
 
   <!-- ROUTINE TAB (루틴 체계화) -->
@@ -1572,6 +1811,52 @@
         <span id="routine-score" style="font-size:13px;font-weight:700;color:var(--primary)">0 / 5</span>
       </div>
       <div id="routine-checklist"></div>
+    </div>
+
+    <!-- 오늘의 컨디션 (기분 / 식욕 / 포만감) -->
+    <div class="card" id="wellness-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <div class="card-title" style="margin-bottom:0">오늘의 컨디션</div>
+        <span id="wellness-saved-label" style="font-size:11px;color:var(--gray-400)"></span>
+      </div>
+      <div style="font-size:11px;color:var(--gray-500);margin-bottom:14px;line-height:1.4">
+        GLP-1 효과(식욕 억제·포만감 증가)와 컨디션을 매일 1~10으로 기록하세요
+      </div>
+
+      <div class="wellness-row">
+        <div class="wellness-label">
+          <span class="wellness-emoji">😊</span>
+          <span class="wellness-name">기분</span>
+          <span class="wellness-val" id="wellness-mood-val">5</span>
+        </div>
+        <input type="range" min="1" max="10" value="5" class="wellness-slider" id="wellness-mood"
+               oninput="onWellnessSlide('mood', this.value)" onchange="saveWellness()">
+        <div class="wellness-scale"><span>나쁨</span><span>좋음</span></div>
+      </div>
+
+      <div class="wellness-row">
+        <div class="wellness-label">
+          <span class="wellness-emoji">🍽️</span>
+          <span class="wellness-name">식욕</span>
+          <span class="wellness-val" id="wellness-appetite-val">5</span>
+        </div>
+        <input type="range" min="1" max="10" value="5" class="wellness-slider" id="wellness-appetite"
+               oninput="onWellnessSlide('appetite', this.value)" onchange="saveWellness()">
+        <div class="wellness-scale"><span>없음</span><span>강함</span></div>
+      </div>
+
+      <div class="wellness-row">
+        <div class="wellness-label">
+          <span class="wellness-emoji">🥄</span>
+          <span class="wellness-name">포만감</span>
+          <span class="wellness-val" id="wellness-satiety-val">5</span>
+        </div>
+        <input type="range" min="1" max="10" value="5" class="wellness-slider" id="wellness-satiety"
+               oninput="onWellnessSlide('satiety', this.value)" onchange="saveWellness()">
+        <div class="wellness-scale"><span>금방 배고픔</span><span>오래 배부름</span></div>
+      </div>
+
+      <div id="wellness-trend" style="margin-top:10px;font-size:11px;color:var(--gray-500);line-height:1.4"></div>
     </div>
 
     <!-- 이번 주 운동 -->
@@ -1976,6 +2261,7 @@ let sideEffects = DB.get('mj_se');
 let userProfile = DB.get('mj_profile', {});
 let exerciseLogs    = DB.get('mj_exercise_logs', []);
 let sleepLogs       = DB.get('mj_sleep_logs', []);
+let wellnessLogs    = DB.get('mj_wellness', []);
 let mealTimingLogs  = DB.get('mj_meal_timing_logs', []);
 
 let selectedDose = null;
@@ -2210,9 +2496,10 @@ function niceTicks(minV, maxV, target) {
   const mag = Math.pow(10, Math.floor(Math.log10(rough)));
   const norm = rough / mag;
   const step = norm < 1.5 ? mag : norm < 3.5 ? 2 * mag : norm < 7.5 ? 5 * mag : 10 * mag;
-  const first = Math.ceil((minV - step * 0.001) / step) * step;
+  const first = Math.floor((minV + step * 0.001) / step) * step;
+  const last  = Math.ceil((maxV - step * 0.001) / step) * step;
   const ticks = [];
-  for (let v = first; v <= maxV + step * 0.001; v += step) {
+  for (let v = first; v <= last + step * 0.001; v += step) {
     ticks.push(parseFloat(v.toFixed(10)));
   }
   return ticks.length ? ticks : [minV, maxV];
@@ -4583,6 +4870,7 @@ function renderAll() {
   renderTimeline();
   renderStatusBanner();
   renderDailyRoutine();
+  renderWellness();
   renderWeeklyExerciseGoal();
   renderSEPatternCard();
   renderDietAnalysis();
@@ -4783,9 +5071,151 @@ function renderInjList() {
     </div>`).join('');
 }
 
+// ─── Body map (injection sites) ───────────────────────
+// Region bounding boxes within viewBox 200x320
+const BM_REGIONS = {
+  '복부 좌':  { x: 70,  y: 100, w: 28, h: 60 },
+  '복부 우':  { x: 102, y: 100, w: 28, h: 60 },
+  '허벅지 좌':{ x: 58,  y: 200, w: 37, h: 80 },
+  '허벅지 우':{ x: 105, y: 200, w: 37, h: 80 }
+};
+function _bmHash(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+function _bmDotColor(daysAgo) {
+  if (daysAgo <= 7)  return '#ef4444';
+  if (daysAgo <= 21) return '#f97316';
+  if (daysAgo <= 42) return '#fbbf24';
+  return '#d1d5db';
+}
+function renderBodyMap(containerId, opts) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const interactive = !!(opts && opts.interactive);
+  const weeksBack = (opts && opts.weeksBack) || 6;
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - weeksBack * 7);
+  const recent = injections.filter(inj => new Date(inj.date + 'T00:00:00') >= cutoff);
+  const selectedSite = (opts && opts.selectedSite) || null;
+
+  // Build SVG
+  const regionsSvg = Object.entries(BM_REGIONS).map(([name, r]) => {
+    const sel = (name === selectedSite) ? ' selected' : '';
+    const ro  = interactive ? '' : ' readonly';
+    const click = interactive ? ` onclick="bmRegionClick('${name}')"` : '';
+    const labelX = r.x + r.w / 2;
+    const labelY = r.y + r.h / 2 + 2;
+    const short = name.replace(' ', '\n');
+    return `<rect class="bm-region${sel}${ro}" data-site="${name}" x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" rx="3"${click}/>
+            <text class="bm-region-label" x="${labelX}" y="${labelY}">${name}</text>`;
+  }).join('');
+
+  const today = new Date();
+  const dotsSvg = recent.map((inj, idx) => {
+    const r = BM_REGIONS[inj.site];
+    if (!r) return '';
+    const seed = _bmHash(inj.date + inj.time + idx);
+    const px = r.x + 4 + (seed % (r.w - 8));
+    const py = r.y + 4 + ((seed >> 8) % (r.h - 8));
+    const days = Math.floor((today - new Date(inj.date + 'T00:00:00')) / (1000 * 60 * 60 * 24));
+    const color = _bmDotColor(days);
+    const radius = days <= 7 ? 3.2 : 2.6;
+    return `<circle class="bm-injection-dot" cx="${px}" cy="${py}" r="${radius}" fill="${color}"/>`;
+  }).join('');
+
+  container.innerHTML = `
+    <svg class="bodymap-svg" viewBox="0 0 200 320" xmlns="http://www.w3.org/2000/svg">
+      <!-- Head -->
+      <circle class="bm-body-fill" cx="100" cy="32" r="22"/>
+      <!-- Neck -->
+      <rect class="bm-body-fill" x="92" y="52" width="16" height="10"/>
+      <!-- Torso -->
+      <path class="bm-body-fill" d="M62 62 Q60 60 70 60 L130 60 Q140 60 138 62 L148 100 L148 175 Q148 182 140 182 L60 182 Q52 182 52 175 L52 100 Z"/>
+      <!-- Left arm -->
+      <path class="bm-body-fill" d="M52 70 Q40 75 36 100 L34 165 Q34 172 40 172 L48 172 Q52 172 52 165 L52 100 Z"/>
+      <!-- Right arm -->
+      <path class="bm-body-fill" d="M148 70 Q160 75 164 100 L166 165 Q166 172 160 172 L152 172 Q148 172 148 165 L148 100 Z"/>
+      <!-- Left thigh -->
+      <path class="bm-body-fill" d="M55 182 L98 182 L96 290 Q96 296 90 296 L60 296 Q54 296 54 290 Z"/>
+      <!-- Right thigh -->
+      <path class="bm-body-fill" d="M102 182 L145 182 L146 290 Q146 296 140 296 L110 296 Q104 296 104 290 Z"/>
+      <!-- Interactive regions + labels -->
+      ${regionsSvg}
+      <!-- Injection dots overlay -->
+      ${dotsSvg}
+    </svg>
+  `;
+}
+function bmRegionClick(name) {
+  // Mirror existing selectSite behavior on the buttons
+  const btn = document.querySelector('.site-grid .site-opt[data-site="' + name + '"]');
+  if (btn) selectSite(btn);
+  renderBodyMap('bodymap-input-wrap', { interactive: true, selectedSite: name });
+}
+function renderBodyMapHome() {
+  const card = document.getElementById('bodymap-home-card');
+  if (!card) return;
+  if (injections.length === 0) { card.style.display = 'none'; return; }
+  card.style.display = '';
+  renderBodyMap('bodymap-home-wrap', { interactive: false, weeksBack: 6 });
+}
+
+// ─── Wellness (mood / appetite / satiety) ─────────────
+function _todayWellness() {
+  const t = todayStr();
+  return wellnessLogs.find(w => w.date === t) || null;
+}
+function onWellnessSlide(field, val) {
+  const el = document.getElementById('wellness-' + field + '-val');
+  if (el) el.textContent = val;
+}
+function saveWellness() {
+  const t = todayStr();
+  const mood     = parseInt(document.getElementById('wellness-mood').value, 10);
+  const appetite = parseInt(document.getElementById('wellness-appetite').value, 10);
+  const satiety  = parseInt(document.getElementById('wellness-satiety').value, 10);
+  const idx = wellnessLogs.findIndex(w => w.date === t);
+  const entry = { date: t, mood, appetite, satiety, savedAt: new Date().toISOString() };
+  if (idx >= 0) wellnessLogs[idx] = entry; else wellnessLogs.push(entry);
+  DB.set('mj_wellness', wellnessLogs);
+  const lbl = document.getElementById('wellness-saved-label');
+  if (lbl) lbl.textContent = '✓ 저장됨';
+  renderWellnessTrend();
+}
+function renderWellness() {
+  const today = _todayWellness();
+  const m = today ? today.mood : 5;
+  const a = today ? today.appetite : 5;
+  const s = today ? today.satiety : 5;
+  const elM = document.getElementById('wellness-mood');
+  const elA = document.getElementById('wellness-appetite');
+  const elS = document.getElementById('wellness-satiety');
+  if (!elM) return;
+  elM.value = m; document.getElementById('wellness-mood-val').textContent = m;
+  elA.value = a; document.getElementById('wellness-appetite-val').textContent = a;
+  elS.value = s; document.getElementById('wellness-satiety-val').textContent = s;
+  const lbl = document.getElementById('wellness-saved-label');
+  if (lbl) lbl.textContent = today ? '✓ 오늘 기록됨' : '아직 기록 안 됨';
+  renderWellnessTrend();
+}
+function renderWellnessTrend() {
+  const el = document.getElementById('wellness-trend');
+  if (!el) return;
+  // last 7 days average
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 7);
+  const recent = wellnessLogs.filter(w => new Date(w.date + 'T00:00:00') >= cutoff);
+  if (recent.length < 2) {
+    el.textContent = recent.length === 0 ? '' : '며칠 더 기록하면 추이가 표시됩니다';
+    return;
+  }
+  const avg = (k) => (recent.reduce((s, w) => s + w[k], 0) / recent.length).toFixed(1);
+  el.innerHTML = `최근 ${recent.length}일 평균 — 기분 <b>${avg('mood')}</b> · 식욕 <b>${avg('appetite')}</b> · 포만감 <b>${avg('satiety')}</b>`;
+}
+
 // ─── Export / Reset ───────────────────────────────────
 function exportData() {
-  const data = { injections, weights, sideEffects, exportedAt: new Date().toISOString() };
+  const data = { injections, weights, sideEffects, wellnessLogs, exportedAt: new Date().toISOString() };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -4809,10 +5239,12 @@ function importData(input) {
       weights      = data.weights      || [];
       sideEffects  = data.sideEffects  || [];
       exerciseLogs = data.exerciseLogs || [];
+      wellnessLogs = data.wellnessLogs || [];
       DB.set('mj_injections', injections);
       DB.set('mj_weights', weights);
       DB.set('mj_se', sideEffects);
       DB.set('mj_exercise_logs', exerciseLogs);
+      DB.set('mj_wellness', wellnessLogs);
       showToast('데이터를 성공적으로 가져왔습니다');
       renderAll();
     } catch {
@@ -4826,8 +5258,8 @@ function importData(input) {
 
 function resetData() {
   if (!confirm('모든 기록을 삭제하겠습니까?\n이 작업은 되돌릴 수 없습니다.')) return;
-  injections = []; weights = []; sideEffects = []; exerciseLogs = [];
-  ['mj_injections', 'mj_weights', 'mj_se', 'mj_exercise_logs'].forEach(k => localStorage.removeItem(k));
+  injections = []; weights = []; sideEffects = []; exerciseLogs = []; wellnessLogs = [];
+  ['mj_injections', 'mj_weights', 'mj_se', 'mj_exercise_logs', 'mj_wellness'].forEach(k => localStorage.removeItem(k));
   showToast('모든 데이터가 초기화되었습니다');
   renderAll();
 }
